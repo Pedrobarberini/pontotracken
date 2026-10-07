@@ -304,7 +304,8 @@ async function loadHistory() {
 function historyQuery(){return `&month=${encodeURIComponent(state.month)}${state.historyStatus?`&status=${encodeURIComponent(state.historyStatus)}`:''}`;}
 function moveMonth(amount) {const [y,m]=state.month.split('-').map(Number);const date=new Date(Date.UTC(y,m-1+amount,1));state.month=date.toISOString().slice(0,7);$('#history-month').value=state.month;loadHistory();}
 $('#history-month').onchange=()=>{if(!$('#history-month').value)return;state.month=$('#history-month').value;loadHistory();};
-$('#history-status').onchange=()=>{state.historyStatus=$('#history-status').value;loadHistory();};
+const historyStatusSelect=$('#history-status');
+if(historyStatusSelect)historyStatusSelect.onchange=()=>{state.historyStatus=historyStatusSelect.value;loadHistory();};
 $('#prev-month').onclick=()=>moveMonth(-1); $('#next-month').onclick=()=>moveMonth(1);
 $('#export').onclick=()=>download(`api.php?action=export${historyQuery()}`);
 $('#template').onclick=()=>download('api.php?action=template');
