@@ -36,6 +36,7 @@ async function api(action, {method='GET',data=null,query='',retried=false}={}) {
     if(result.csrf&&state.session)state.session.csrf=result.csrf;
     syncTime(result.serverTime);return result;
   }
+  const requestCsrf=state.session?.csrf;
   const options = {method,credentials:'same-origin',headers:{}};
   if (method !== 'GET') options.headers['X-CSRF-Token'] = state.session.csrf;
   if (data instanceof FormData) options.body=data;
@@ -45,7 +46,7 @@ async function api(action, {method='GET',data=null,query='',retried=false}={}) {
   if (!response.ok) {
     let error = new Error(result.error || 'Não foi possível concluir a ação.'); error.status=response.status; error.code=result.code;
     if(response.status===401&&state.session?.user&&!['login','session','logout'].includes(action)){
-      try{if(!retried&&!state.signingOut&&await restoreSession())return api(action,{method,data,query,retried:true});}
+      try{if(!retried&&!state.signingOut&&(state.session.csrf!==requestCsrf||await restoreSession()))return api(action,{method,data,query,retried:true});}
       catch(restoreError){error=restoreError;}
       apiSessionToken=null; state.session.user=null; showLogin();
     }
