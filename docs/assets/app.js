@@ -1,4 +1,5 @@
 import {createAdmin} from './admin.js';
+import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
 import {apiBase,demoHref} from './connection.js?v=demo-2';
 const isDemo=document.body.dataset.mode==='demo';
 const demoClient=isDemo?await import('./demo-api.mjs?v=demo-2'):null;
@@ -13,7 +14,7 @@ function apiOptions(options={}){
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const bootContent = $('#boot').innerHTML;
-const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', today: null, preview: null, file: null, auth: null, authModule: null, authPromise: null, authMode: 'login', authenticating: false, punchRequest: null };
+const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', today: null, preview: null, file: null, auth: null, authModule: null, authPromise: null, restorePromise: null, signingOut: false, authMode: 'login', authenticating: false, punchRequest: null };
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="assets/icons.svg#${name}"/></svg>`;
 const dateObject = date => new Date(`${date}T12:00:00Z`);
@@ -29,7 +30,7 @@ function toast(message, error = false) {
   clearTimeout(state.toastTimer); const el = $('#toast'); el.textContent = message; el.classList.toggle('error',error); el.hidden=false;
   state.toastTimer = setTimeout(()=>el.hidden=true,error ? 9000 : 6000);
 }
-async function api(action, {method='GET',data=null,query=''}={}) {
+async function api(action, {method='GET',data=null,query='',retried=false}={}) {
   if(demoClient){
     const result=await demoClient.demoApi(action,{method,data,query});
     if(result.csrf&&state.session)state.session.csrf=result.csrf;
@@ -42,8 +43,13 @@ async function api(action, {method='GET',data=null,query=''}={}) {
   const response = await fetch(apiURL(`api.php?action=${encodeURIComponent(action)}${query}`),apiOptions(options));
   let result; try { result = await response.json(); } catch { throw new Error('O servidor não respondeu corretamente. Tente novamente.'); }
   if (!response.ok) {
-    if (response.status===401 && state.session?.user) { apiSessionToken=null; state.session.user=null; state.session=await api('session'); showLogin(); }
-    const error = new Error(result.error || 'Não foi possível concluir a ação.'); error.status=response.status; error.code=result.code; throw error;
+    let error = new Error(result.error || 'Não foi possível concluir a ação.'); error.status=response.status; error.code=result.code;
+    if(response.status===401&&state.session?.user&&!['login','session','logout'].includes(action)){
+      try{if(!retried&&!state.signingOut&&await restoreSession())return api(action,{method,data,query,retried:true});}
+      catch(restoreError){error=restoreError;}
+      apiSessionToken=null; state.session.user=null; showLogin();
+    }
+    throw error;
   }
   if (result.csrf && state.session) state.session.csrf=result.csrf;
   if(action==='login'&&externalAPI&&result.sessionToken)apiSessionToken=result.sessionToken;
@@ -64,10 +70,23 @@ async function bootstrap() {
       $('#punch-confirm > p').textContent='Esta é uma marcação de teste e será descartada ao atualizar a página.';
     }
     state.session=await api('session'); state.timezone=state.session.timezone; syncTime(state.session.serverTime);
+    if(!isDemo&&state.session.firebaseReady){
+      const [auth]=await firebaseAuth();
+      if(state.session.user&&auth.currentUser?.uid!==state.session.user.uid){
+        await api('logout',{method:'POST',data:{}}); apiSessionToken=null; state.session=await api('session');
+      }
+      if(!state.session.user)await restoreSession();
+    }
     $('#boot').hidden=true;
     if (state.session.user) await showApp(); else showLogin();
-    if(state.session.firebaseReady) firebaseAuth().catch(()=>{});
-  } catch (error) { $('#boot').innerHTML=`<p>${esc(error.message)}</p><button class="button secondary" id="retry-boot">Tentar novamente</button>`; $('#retry-boot').onclick=bootstrap; }
+  } catch (error) {
+    if([401,403].includes(error.status)||error.code?.startsWith('auth/')){
+      showLogin(); $('#login-error').textContent=authError(error); $('#login-error').hidden=false;
+    }else{
+      $('#app').hidden=true; $('#login').hidden=true; $('#boot').hidden=false;
+      $('#boot').innerHTML=`<p>${esc(error.message)}</p><button class="button secondary" id="retry-boot">Tentar novamente</button>`; $('#retry-boot').onclick=bootstrap;
+    }
+  }
 }
 function showLogin() {
   admin.reset();
@@ -98,10 +117,24 @@ async function firebaseAuth() {
     const [appModule,authModule] = await Promise.all([import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js')]);
     const app=appModule.getApps()[0]||appModule.initializeApp(state.session.firebase),auth=authModule.getAuth(app);
     auth.languageCode='pt-BR';
-    await authModule.setPersistence(auth,authModule.inMemoryPersistence);
+    await auth.authStateReady();
+    await authModule.setPersistence(auth,authModule.browserLocalPersistence);
     state.auth=auth; state.authModule=authModule; return [auth,authModule];
   })().catch(error=>{state.authPromise=null;throw error;});
   return state.authPromise;
+}
+function loginExchange(){
+  return {exchange:idToken=>api('login',{method:'POST',data:{idToken}}),signOut:()=>state.authModule.signOut(state.auth)};
+}
+async function restoreSession(){
+  if(state.signingOut)return false;
+  if(!state.restorePromise)state.restorePromise=(async()=>{
+    const [auth]=await firebaseAuth();
+    if(!await restoreFirebaseLogin(auth,loginExchange()))return false;
+    state.session=await api('session');
+    return Boolean(state.session.user);
+  })().finally(()=>{state.restorePromise=null;});
+  return state.restorePromise;
 }
 function authError(error) {
   return ({'auth/invalid-credential':'E-mail ou senha incorretos.','auth/user-disabled':'Sua conta foi desativada. Fale com a empresa.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos.','auth/network-request-failed':'Confira sua conexão e tente novamente.','auth/invalid-email':'Digite um e-mail válido.','auth/unauthorized-domain':'O domínio do site precisa ser autorizado no Firebase.','auth/email-already-in-use':'Este e-mail já tem uma conta. Entre com sua senha ou use o Google.','auth/weak-password':'Use uma senha mais forte, com pelo menos 6 caracteres e de acordo com as regras da empresa.','auth/password-does-not-meet-requirements':'A senha não atende às regras de segurança da empresa.','auth/popup-blocked':'Permita a abertura de janelas para este site e tente entrar com Google novamente.','auth/popup-closed-by-user':'O login com Google foi cancelado. Você pode tentar novamente.','auth/cancelled-popup-request':'Já existe uma janela de login aberta. Conclua o acesso nela.','auth/operation-not-allowed':'Este método de login precisa ser ativado no Firebase.','auth/account-exists-with-different-credential':'Este e-mail já usa outro método de acesso. Entre com o método que você usou no cadastro.'})[error.code] || error.message || 'Não foi possível concluir o acesso.';
@@ -133,11 +166,10 @@ async function authenticationWork(button,work,label){
 }
 async function finishLogin(credential,created=false){
   try{
-    await api('login',{method:'POST',data:{idToken:await credential.user.getIdToken()}});
+    await exchangeFirebaseLogin(credential.user,loginExchange());
   }catch(error){
     if(error.code!=='ACCOUNT_PENDING_APPROVAL')throw error;
     $('#email').value=credential.user.email||$('#email').value;
-    await state.authModule.signOut(state.auth);
     setAuthMode('login',false);
     $('#auth-message').textContent=created?'Conta criada! Aguarde a autorização da empresa para registrar seu ponto.':'Sua conta foi identificada. Aguarde a autorização da empresa para registrar seu ponto.';
     $('#auth-message').hidden=false; return;
@@ -172,8 +204,17 @@ $('#reset-password').onclick=async()=>{
 };
 async function logout(){
   if(isDemo){location.href=new URL('./',document.baseURI).href;return;}
-  try { await api('logout',{method:'POST',data:{}}); apiSessionToken=null; if (state.auth) await state.authModule.signOut(state.auth); admin.reset(); state.preview=null; state.punchRequest=null; $('#preview-panel').hidden=true; state.session=await api('session'); setAuthMode('login'); showLogin(); }
-  catch(error){toast(error.message,true);}
+  if(state.signingOut)return;
+  state.signingOut=true;
+  try{
+    await state.restorePromise?.catch(()=>{});
+    // Always clear the saved Firebase identity, even if the API is unavailable.
+    try{await api('logout',{method:'POST',data:{}});}catch(error){if(error.status!==401)toast(error.message,true);}
+    if(state.auth)await state.authModule.signOut(state.auth);
+    apiSessionToken=null; admin.reset(); state.preview=null; state.punchRequest=null; state.session.user=null;
+    $('#preview-panel').hidden=true; state.session=await api('session').catch(()=>state.session); setAuthMode('login'); showLogin();
+  }catch(error){toast(authError(error),true);}
+  finally{state.signingOut=false;}
 }
 $('#logout').onclick=logout; $('#mobile-logout').onclick=logout;
 function switchView(view, load=true) {
