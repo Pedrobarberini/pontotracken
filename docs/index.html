@@ -6,15 +6,15 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#14343d"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/style.css">
-  <script type="module" src="assets/app.js"></script>
+  <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
+  <link rel="stylesheet" href="assets/style.css?v=tracken-4">
+  <script type="module" src="assets/app.js?v=tracken-4"></script>
 </head>
 <body>
-<div id="boot" class="boot"><span class="brand-mark">p<span></span></span><p>Carregando seu ponto…</p></div>
+<div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p>Carregando seu ponto…</p></div>
 <main id="login" class="login-layout" hidden>
   <div class="login-intro">
-    <a class="brand" href="#"><span class="brand-mark">p<span></span></span><span>ponto<span class="brand-dot">.</span></span></a>
+    <a class="brand" href="#" aria-label="PontoTracken — início"><img class="brand-logo" src="assets/pontotracken-mark-v2.webp" width="40" height="40" alt=""><span class="brand-name">Ponto<strong>Track<span>en</span></strong></span></a>
     <div class="login-copy"><span class="eyebrow">SUA ROTINA, MAIS SIMPLES</span><h1>Sua jornada<br>em dia<span>.</span></h1><p>Registre seu ponto, acompanhe suas horas e traga seu histórico do Excel.</p>
       <div class="login-clock"><span class="clock-face"></span><div><strong>Um registro de cada vez.</strong><span>Entrada, saída e tudo no seu tempo.</span></div></div>
     </div>
@@ -43,7 +43,7 @@
 </main>
 <div id="app" class="app-layout" hidden>
   <aside class="sidebar">
-    <a class="brand" href="#registro"><span class="brand-mark">p<span></span></span><span>ponto<span class="brand-dot">.</span></span></a>
+    <a class="brand" href="#registro" aria-label="PontoTracken — início"><img class="brand-logo" src="assets/pontotracken-mark-v2.webp" width="40" height="40" alt=""><span class="brand-name">Ponto<strong>Track<span>en</span></strong></span></a>
     <span class="nav-label">MINHA JORNADA</span>
     <nav aria-label="Menu principal">
       <button data-view="registro" class="nav-button active"><svg class="icon"><use href="assets/icons.svg#clock"/></svg>Meu ponto</button>
@@ -110,7 +110,7 @@
       </section>
       <div id="data-error" class="data-error" role="alert" hidden><span></span><button id="retry-data" class="text-button">Tentar novamente</button></div>
     </main>
-    <footer class="workspace-footer"><span>ponto. <span>Sua jornada em dia.</span></span><span id="footer-zone">America/Sao_Paulo</span></footer>
+    <footer class="workspace-footer"><span>PontoTracken <span>Sua jornada em dia.</span></span><span id="footer-zone">America/Sao_Paulo</span></footer>
   </div>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
