@@ -29,6 +29,8 @@ async function busy(button, work, label='Aguarde…') {
 async function bootstrap() {
   $('#boot').innerHTML=bootContent;
   try {
+    // Compatibility for an older cached demo page; new pages use app.js.
+    await api('demo',{method:'POST',data:{}});
     state.session=await api('session'); state.timezone=state.session.timezone; syncTime(state.session.serverTime);
     $('#boot').hidden=true;
     if (state.session.user) await showApp(); else showLogin();

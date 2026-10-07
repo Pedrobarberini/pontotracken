@@ -1,5 +1,7 @@
 import {createAdmin} from './admin.js';
-import {apiBase,demoHref} from './connection.js';
+import {apiBase,demoHref} from './connection.js?v=demo-2';
+const isDemo=document.body.dataset.mode==='demo';
+const demoClient=isDemo?await import('./demo-api.mjs?v=demo-2'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -28,6 +30,11 @@ function toast(message, error = false) {
   state.toastTimer = setTimeout(()=>el.hidden=true,error ? 9000 : 6000);
 }
 async function api(action, {method='GET',data=null,query=''}={}) {
+  if(demoClient){
+    const result=await demoClient.demoApi(action,{method,data,query});
+    if(result.csrf&&state.session)state.session.csrf=result.csrf;
+    syncTime(result.serverTime);return result;
+  }
   const options = {method,credentials:'same-origin',headers:{}};
   if (method !== 'GET') options.headers['X-CSRF-Token'] = state.session.csrf;
   if (data instanceof FormData) options.body=data;
@@ -49,6 +56,13 @@ async function busy(button, work, label='Aguarde…') {
 async function bootstrap() {
   $('#boot').innerHTML=bootContent;
   try {
+    if(isDemo){
+      await api('demo',{method:'POST'});
+      for(const button of [$('#logout'),$('#mobile-logout')]){button.setAttribute('aria-label','Voltar ao login');button.title='Voltar ao login';}
+      $('.sidebar-note strong').textContent='Modo de demonstração.';
+      $('.sidebar-note p').textContent='Explore com dados de exemplo. Ao atualizar, as marcações de teste são descartadas.';
+      $('#punch-confirm > p').textContent='Esta é uma marcação de teste e será descartada ao atualizar a página.';
+    }
     state.session=await api('session'); state.timezone=state.session.timezone; syncTime(state.session.serverTime);
     $('#boot').hidden=true;
     if (state.session.user) await showApp(); else showLogin();
@@ -157,6 +171,7 @@ $('#reset-password').onclick=async()=>{
   try { await authenticationWork($('#reset-password'),async()=>{ const [auth,mod]=await firebaseAuth(); await mod.sendPasswordResetEmail(auth,$('#email').value.trim()); toast('Se o e-mail estiver cadastrado, você receberá as instruções.'); },'Enviando…'); } catch(error){toast(authError(error),true);}
 };
 async function logout(){
+  if(isDemo){location.href=new URL('./',document.baseURI).href;return;}
   try { await api('logout',{method:'POST',data:{}}); apiSessionToken=null; if (state.auth) await state.authModule.signOut(state.auth); admin.reset(); state.preview=null; state.punchRequest=null; $('#preview-panel').hidden=true; state.session=await api('session'); setAuthMode('login'); showLogin(); }
   catch(error){toast(error.message,true);}
 }
@@ -249,6 +264,7 @@ $('#prev-month').onclick=()=>moveMonth(-1); $('#next-month').onclick=()=>moveMon
 $('#export').onclick=()=>download(`api.php?action=export&month=${encodeURIComponent(state.month)}`);
 $('#template').onclick=()=>download('api.php?action=template');
 async function download(url) {
+  if(demoClient){try{await demoClient.demoDownload(url);}catch(error){toast(error.message,true);}return;}
   try { const response=await fetch(apiURL(url),apiOptions()); if(!response.ok){const result=await response.json();throw new Error(result.error || 'Não foi possível baixar o arquivo.');}
     const blob=await response.blob();const href=URL.createObjectURL(blob); const link=document.createElement('a');link.href=href;
     link.download=response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'ponto.csv';link.click();setTimeout(()=>URL.revokeObjectURL(href),1000);
