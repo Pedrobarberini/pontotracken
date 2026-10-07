@@ -1,6 +1,7 @@
 import {demoApi,demoDownload} from './demo-api.mjs';
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+const bootContent = $('#boot').innerHTML;
 const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', today: null, preview: null, file: null, auth: null, authModule: null, punchRequest: null };
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="assets/icons.svg#${name}"/></svg>`;
@@ -26,6 +27,7 @@ async function busy(button, work, label='Aguarde…') {
   try { return await work(); } finally { button.innerHTML=html; button.disabled=false; }
 }
 async function bootstrap() {
+  $('#boot').innerHTML=bootContent;
   try {
     state.session=await api('session'); state.timezone=state.session.timezone; syncTime(state.session.serverTime);
     $('#boot').hidden=true;
