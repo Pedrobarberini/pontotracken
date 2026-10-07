@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://ponto-apresentacao-empresa.barberinipedro.chatgpt.site https://*.googleapis.com https://*.firebaseapp.com https://*.gstatic.com https://apis.google.com; frame-src https://*.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="same-origin">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14343d"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
+  <title>PontoTracken · Sua jornada em dia</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+  <script type="module" src="assets/app.js"></script>
+</head>
+<body>
+<div id="boot" class="boot"><span class="brand-mark">p<span></span></span><p>Carregando seu ponto…</p></div>
+<main id="login" class="login-layout" hidden>
+  <div class="login-intro">
+    <a class="brand" href="#"><span class="brand-mark">p<span></span></span><span>ponto<span class="brand-dot">.</span></span></a>
+    <div class="login-copy"><span class="eyebrow">SUA ROTINA, MAIS SIMPLES</span><h1>Sua jornada<br>em dia<span>.</span></h1><p>Registre seu ponto, acompanhe suas horas e traga seu histórico do Excel.</p>
+      <div class="login-clock"><span class="clock-face"></span><div><strong>Um registro de cada vez.</strong><span>Entrada, saída e tudo no seu tempo.</span></div></div>
+    </div>
+    <span class="login-footer">CONTROLE DE PONTO</span>
+  </div>
+  <div class="login-form-wrap">
+    <div class="login-form-card"><span id="auth-eyebrow" class="eyebrow muted">BEM-VINDO</span><h2 id="auth-title">Entre na sua conta</h2><p id="auth-description" class="muted">Use seu e-mail ou entre com sua conta Google.</p>
+      <form id="login-form">
+        <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="voce@empresa.com.br" required>
+        <div class="password-label"><label for="password">Senha</label><button class="text-button" type="button" id="reset-password">Esqueci minha senha</button></div>
+        <div class="password-field"><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required><button id="toggle-password" type="button" aria-label="Mostrar senha"><svg class="icon"><use href="assets/icons.svg#eye"/></svg></button></div>
+        <div id="confirm-password-field" class="register-field" hidden><label for="confirm-password">Confirmar senha</label><input id="confirm-password" type="password" autocomplete="new-password" placeholder="Digite a senha novamente" disabled></div>
+        <p id="register-note" class="field-hint" hidden>Use pelo menos 6 caracteres. Após o cadastro, aguarde a autorização da empresa.</p>
+        <button id="login-submit" class="button primary full" type="submit">Entrar</button>
+        <p id="login-error" class="form-message" role="alert" hidden></p>
+        <p id="auth-message" class="form-success" role="status" aria-live="polite" hidden></p>
+      </form>
+      <div class="auth-divider"><span>ou</span></div>
+      <button id="google-login" class="button google-button full" type="button"><img src="assets/google-g.png" width="20" height="20" alt="">Entrar com Google</button>
+      <div class="auth-register"><span id="auth-switch-label">Primeiro acesso?</span><button id="register-toggle" class="text-button" type="button">Criar conta</button></div>
+      <p id="setup-note" class="setup-note" hidden>O login da empresa ainda está sendo configurado. Enquanto isso, você pode conhecer o site pela demonstração local.</p>
+      <div id="demo-access" class="demo-access" hidden><span>Conheça o site</span><button id="demo-login" class="button secondary full" type="button"><svg class="icon"><use href="assets/icons.svg#play"/></svg>Abrir demonstração</button><small>Ambiente local com dados de exemplo.</small></div>
+      <div class="login-security"><svg class="icon"><use href="assets/icons.svg#lock"/></svg>Acesso individual com Firebase</div>
+    </div>
+  </div>
+</main>
+<div id="app" class="app-layout" hidden>
+  <aside class="sidebar">
+    <a class="brand" href="#registro"><span class="brand-mark">p<span></span></span><span>ponto<span class="brand-dot">.</span></span></a>
+    <span class="nav-label">MINHA JORNADA</span>
+    <nav aria-label="Menu principal">
+      <button data-view="registro" class="nav-button active"><svg class="icon"><use href="assets/icons.svg#clock"/></svg>Meu ponto</button>
+      <button data-view="espelho" class="nav-button"><svg class="icon"><use href="assets/icons.svg#calendar"/></svg>Espelho de ponto</button>
+      <button data-view="importar" class="nav-button"><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar planilha</button>
+      <button id="admin-nav" data-view="admin" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#shield"/></svg>Administração</button>
+    </nav>
+    <div class="sidebar-note"><svg class="icon"><use href="assets/icons.svg#shield"/></svg><strong>Seu ponto é pessoal.</strong><p>Seus registros ficam vinculados à sua conta.</p></div>
+    <div class="sidebar-user"><span id="avatar" class="avatar">V</span><div><strong id="user-name">Visitante</strong><span id="user-role">Funcionário</span></div><button id="logout" class="icon-button" aria-label="Sair da conta" title="Sair"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span class="breadcrumb">Minha jornada <span>/</span> <strong id="breadcrumb-view">Meu ponto</strong></span><div class="topbar-right"><span id="mode-badge" class="mode-badge" hidden>Demonstração</span><span id="header-date"></span><span class="small-avatar" id="small-avatar">V</span><button id="mobile-logout" class="icon-button mobile-logout" aria-label="Sair da conta"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div></header>
+    <div id="demo-banner" class="demo-banner" hidden><svg class="icon"><use href="assets/icons.svg#info"/></svg>Você está na demonstração local. Os dados e as marcações são de teste.</div>
+    <main class="content">
+      <section id="view-registro" class="view">
+        <div class="page-heading"><div><span class="eyebrow muted">UM DIA DE CADA VEZ</span><h1>Meu ponto<span>.</span></h1><p>Acompanhe sua jornada e registre suas marcações.</p></div><button class="button secondary" data-open-import><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar Excel</button></div>
+        <div class="today-grid">
+          <section class="punch-card" aria-labelledby="punch-title"><div class="punch-top"><span id="punch-title">REGISTRO DE HOJE</span><span class="timezone-pill">Horário de Brasília</span></div><div id="live-clock" class="live-clock">00:00<span>:00</span></div><p id="today-date" class="today-date"></p><div class="punch-bottom"><div><span class="punch-state" id="punch-state">Jornada não iniciada</span><p id="punch-hint">Tudo pronto para começar seu dia.</p></div><button id="punch" class="button punch-button"><svg class="icon"><use href="assets/icons.svg#fingerprint"/></svg><span>Registrar entrada</span></button></div></section>
+          <section class="timeline-card"><div class="card-heading"><h2>Marcações de hoje</h2><svg class="icon muted"><use href="assets/icons.svg#clock"/></svg></div><div id="today-timeline" class="timeline"></div><div class="today-total"><span>Horas registradas</span><strong id="today-total">00h 00m</strong></div></section>
+        </div>
+        <div class="section-title"><h2>Seu mês até aqui</h2><span id="summary-month"></span></div>
+        <div class="stats-grid" id="home-stats">
+          <div class="stat"><span class="stat-icon teal"><svg class="icon"><use href="assets/icons.svg#calendar-check"/></svg></span><span>Dias com ponto</span><strong id="stat-days">0 <small>dias</small></strong></div>
+          <div class="stat"><span class="stat-icon blue"><svg class="icon"><use href="assets/icons.svg#clock"/></svg></span><span>Horas registradas</span><strong id="stat-hours">00<small>h</small> 00<small>m</small></strong></div>
+          <div class="stat"><span class="stat-icon orange"><svg class="icon"><use href="assets/icons.svg#alert"/></svg></span><span>Dias em aberto</span><strong id="stat-pending">0 <small>dias</small></strong></div>
+          <div class="stat"><span class="stat-icon purple"><svg class="icon"><use href="assets/icons.svg#file"/></svg></span><span>Atestados</span><strong id="stat-medical">0 <small>dias</small></strong></div>
+        </div>
+        <section class="history-card"><div class="card-heading history-heading"><div><h2>Últimos registros</h2><p>Seu histórico mais recente neste mês.</p></div><button class="text-button" data-open-history>Ver espelho completo</button></div><div id="recent-table"></div></section>
+        <p class="footnote"><svg class="icon"><use href="assets/icons.svg#info"/></svg>As horas somam os intervalos completos entre entrada e saída.</p>
+      </section>
+      <section id="view-espelho" class="view" hidden>
+        <div class="page-heading"><div><span class="eyebrow muted">SEU HISTÓRICO</span><h1>Espelho de ponto<span>.</span></h1><p>Confira os horários e as ocorrências de cada dia.</p></div><button id="export" class="button secondary"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Exportar CSV</button></div>
+        <div class="month-toolbar"><button id="prev-month" class="icon-button" aria-label="Mês anterior"><svg class="icon"><use href="assets/icons.svg#chevron-left"/></svg></button><label class="sr-only" for="history-month">Mês do espelho</label><input id="history-month" type="month"><button id="next-month" class="icon-button" aria-label="Próximo mês"><svg class="icon"><use href="assets/icons.svg#chevron-right"/></svg></button><span id="history-summary"></span></div>
+        <div id="history-table" class="history-card"></div>
+        <p class="footnote">As ocorrências FDS, N/A e ATESTADO não somam horas. Dias em branco na planilha não viram faltas.</p>
+      </section>
+      <section id="view-importar" class="view" hidden>
+        <div class="page-heading"><div><span class="eyebrow muted">DO EXCEL PARA O SEU PONTO</span><h1>Importar planilha<span>.</span></h1><p>Traga as marcações do seu modelo e confira antes de salvar.</p></div><button id="template" class="button secondary"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Baixar modelo</button></div>
+        <div class="import-grid"><section class="upload-card"><h2>Seu arquivo de ponto</h2><p class="muted">Selecione a planilha com meses nas colunas e dias nas linhas.</p><form id="import-form"><label for="import-year">Ano da primeira coluna de mês</label><input id="import-year" type="number" min="2000" max="2100" required><p class="field-hint">Ex.: se o primeiro SET é de 2026, informe 2026. JAN será convertido para 2027.</p><label for="file-input" class="dropzone" id="dropzone"><span class="upload-symbol"><svg class="icon"><use href="assets/icons.svg#upload"/></svg></span><strong id="file-label">Clique para selecionar sua planilha</strong><span>ou arraste o arquivo para cá</span><small>XLSX, XLS ou CSV · até 5 MB</small></label><input id="file-input" class="sr-only" type="file" accept=".xlsx,.xls,.csv"><button id="preview-button" type="submit" class="button primary full" disabled>Conferir importação</button></form></section>
+          <section class="model-card"><span class="eyebrow muted">O SEU MODELO, RECONHECIDO</span><h2>Meses em colunas.<br>Dias em linhas.</h2><div class="mini-sheet" aria-label="Exemplo da planilha"><table><thead><tr><th>Dia</th><th>SET</th><th>OUT</th></tr></thead><tbody><tr><td>1</td><td>09:00 | 16:00</td><td>09:00 | 16:00</td></tr><tr><td>2</td><td>09:00 | 16:00</td><td>FDS</td></tr><tr><td>3</td><td>ATESTADO</td><td>N/A</td></tr></tbody></table></div><dl class="legend"><div><dt>09:00 | 16:00</dt><dd>Entrada e saída</dd></div><div><dt>FDS</dt><dd>Fim de semana</dd></div><div><dt>N/A</dt><dd>Não se aplica</dd></div><div><dt>ATESTADO</dt><dd>Ausência por atestado</dd></div></dl><p class="model-note"><svg class="icon"><use href="assets/icons.svg#shield"/></svg>A importação preserva registros que já existem. Apenas a primeira aba é lida.</p></section>
+        </div>
+        <section id="preview-panel" class="history-card preview-panel" hidden><div class="card-heading"><div><h2>Confira sua importação</h2><p id="preview-summary"></p></div><button id="commit-button" class="button primary">Salvar registros</button></div><div id="import-warnings" hidden></div><div id="preview-table"></div></section>
+      </section>
+      <section id="view-admin" class="view" hidden>
+        <div class="page-heading"><div><span class="eyebrow muted">GESTÃO DA EMPRESA</span><h1>Administração<span>.</span></h1><p>Gerencie o acesso da equipe e mantenha os registros em dia.</p></div><span class="admin-badge">Acesso ADMIN</span></div>
+        <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="users" class="active" aria-pressed="true">Funcionários</button><button data-admin-tab="records" aria-pressed="false">Ajustar ponto</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
+        <div id="admin-error" class="data-error" role="alert" hidden></div>
+        <section id="admin-panel-users" class="admin-panel">
+          <div class="admin-counts"><div><span>Aguardando aprovação</span><strong id="admin-count-pending">0</strong></div><div><span>Acesso liberado</span><strong id="admin-count-active">0</strong></div><div><span>Bloqueados</span><strong id="admin-count-blocked">0</strong></div></div>
+          <form id="admin-users-filter" class="admin-toolbar"><div class="admin-field grow"><label for="admin-search">Buscar funcionário</label><input id="admin-search" type="search" placeholder="Nome ou e-mail" maxlength="180"></div><div class="admin-field"><label for="admin-status">Situação do acesso</label><select id="admin-status"><option value="">Todas</option><option value="pending">Aguardando aprovação</option><option value="active">Liberado</option><option value="blocked">Bloqueado</option></select></div><button class="button secondary" type="submit">Buscar</button></form>
+          <div class="history-card" id="admin-users-table"></div><div class="admin-pagination"><button id="admin-users-prev" class="button secondary" disabled>Anterior</button><span id="admin-users-page"></span><button id="admin-users-next" class="button secondary" disabled>Próxima</button></div>
+          <p class="footnote">Os cadastros aparecem aqui após a primeira tentativa de entrar no site. O bloqueio encerra o acesso imediatamente e preserva o histórico de ponto.</p>
+        </section>
+        <section id="admin-panel-records" class="admin-panel" hidden>
+          <form id="admin-record-filter" class="admin-toolbar"><div class="admin-field grow"><label for="admin-record-search">Buscar nome ou e-mail</label><input id="admin-record-search" type="search" placeholder="Buscar na equipe" maxlength="180"></div><button class="button secondary" type="submit">Buscar funcionário</button></form>
+          <div class="admin-toolbar"><div class="admin-field grow"><label for="admin-employee">Funcionário</label><select id="admin-employee"><option value="">Selecione um funcionário</option></select></div><div class="admin-field"><label for="admin-month">Mês do ponto</label><input id="admin-month" type="month"></div><button id="admin-add-record" class="button primary" disabled>Adicionar dia</button></div>
+          <div id="admin-record-summary" class="admin-description"></div><div class="history-card" id="admin-records-table"><div class="empty-state">Selecione um funcionário para consultar e corrigir o ponto.</div></div>
+          <p class="footnote">Cada ajuste exige justificativa. O registro anterior e o ADMIN responsável ficam no histórico de alterações.</p>
+        </section>
+        <section id="admin-panel-history" class="admin-panel" hidden>
+          <div class="admin-toolbar"><div class="admin-field grow"><label for="admin-history-employee">Histórico de</label><select id="admin-history-employee"><option value="">Toda a equipe</option></select></div><button id="admin-refresh-history" class="button secondary">Atualizar histórico</button></div><div id="admin-history-list"></div>
+          <div class="admin-pagination"><button id="admin-history-prev" class="button secondary" disabled>Anterior</button><span id="admin-history-page"></span><button id="admin-history-next" class="button secondary" disabled>Próxima</button></div>
+        </section>
+      </section>
+      <div id="data-error" class="data-error" role="alert" hidden><span></span><button id="retry-data" class="text-button">Tentar novamente</button></div>
+    </main>
+    <footer class="workspace-footer"><span>ponto. <span>Sua jornada em dia.</span></span><span id="footer-zone">America/Sao_Paulo</span></footer>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="punch-confirm" class="confirm-dialog"><div class="dialog-icon"><svg class="icon"><use href="assets/icons.svg#check"/></svg></div><h2 id="confirm-title">Registrar entrada?</h2><p>O registro usará o horário atual do servidor.</p><div class="dialog-actions"><button id="cancel-punch" class="button secondary">Cancelar</button><button id="confirm-punch" class="button primary">Confirmar registro</button></div></dialog>
+<dialog id="admin-access-dialog" class="confirm-dialog admin-dialog" aria-labelledby="admin-access-title"><form id="admin-access-form"><span class="eyebrow muted">ACESSO À EMPRESA</span><h2 id="admin-access-title">Aprovar acesso</h2><p id="admin-access-person"></p><p id="admin-access-description" class="field-hint"></p><label for="admin-access-reason">Justificativa</label><textarea id="admin-access-reason" rows="3" required minlength="10" maxlength="1000" placeholder="Explique o motivo desta alteração"></textarea><p id="admin-access-error" class="form-message" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="admin-access-cancel" class="button secondary">Cancelar</button><button id="admin-access-save" class="button primary" type="submit">Confirmar</button></div></form></dialog>
+<dialog id="admin-correction-dialog" class="confirm-dialog admin-dialog" aria-labelledby="admin-correction-title"><form id="admin-correction-form"><span class="eyebrow muted">CORREÇÃO DE PONTO</span><h2 id="admin-correction-title">Ajustar registro</h2><p id="admin-correction-person"></p><div class="admin-before"><span>Registro atual</span><strong id="admin-correction-before"></strong></div><div class="admin-form-grid"><div><label for="admin-correction-date">Data</label><input id="admin-correction-date" type="date" min="2000-01-01" required></div><div><label for="admin-correction-status">Situação</label><select id="admin-correction-status"><option value="recorded">Marcações de ponto</option><option value="weekend">FDS · Fim de semana</option><option value="not_applicable">N/A · Não se aplica</option><option value="medical">ATESTADO</option></select></div></div><div id="admin-correction-times-field"><label for="admin-correction-times">Entrada e saída</label><textarea id="admin-correction-times" rows="2" maxlength="140" placeholder="09:00 | 12:00 | 13:00 | 16:00"></textarea><p class="field-hint">Separe os horários por |, em ordem crescente. Até 12 marcações no mesmo dia.</p></div><p id="admin-correction-preview" class="admin-description" aria-live="polite"></p><label for="admin-correction-reason">Justificativa obrigatória</label><textarea id="admin-correction-reason" rows="3" required minlength="10" maxlength="1000" placeholder="Ex.: saída não registrada por erro no acesso"></textarea><p id="admin-correction-error" class="form-message" role="alert" hidden></p><div class="dialog-actions"><button id="admin-correction-cancel" class="button secondary" type="button">Cancelar</button><button id="admin-correction-save" class="button primary" type="submit">Salvar correção</button></div></form></dialog>
+</body></html>
