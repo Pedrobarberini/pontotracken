@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#14343d"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=tracken-5">
-  <script type="module" src="assets/app.js?v=auth-2"></script>
+  <link rel="stylesheet" href="assets/style.css?v=history-1">
+  <script type="module" src="assets/app.js?v=history-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p>Carregando seu ponto…</p></div>
@@ -76,7 +76,7 @@
       </section>
       <section id="view-espelho" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">SEU HISTÓRICO</span><h1>Espelho de ponto<span>.</span></h1><p>Confira os horários e as ocorrências de cada dia.</p></div><button id="export" class="button secondary"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Exportar CSV</button></div>
-        <div class="month-toolbar"><button id="prev-month" class="icon-button" aria-label="Mês anterior"><svg class="icon"><use href="assets/icons.svg#chevron-left"/></svg></button><label class="sr-only" for="history-month">Mês do espelho</label><input id="history-month" type="month"><button id="next-month" class="icon-button" aria-label="Próximo mês"><svg class="icon"><use href="assets/icons.svg#chevron-right"/></svg></button><span id="history-summary"></span></div>
+        <div class="month-toolbar"><div class="month-picker"><button id="prev-month" class="icon-button" aria-label="Mês anterior"><svg class="icon"><use href="assets/icons.svg#chevron-left"/></svg></button><label class="sr-only" for="history-month">Mês do espelho</label><input id="history-month" type="month"><button id="next-month" class="icon-button" aria-label="Próximo mês"><svg class="icon"><use href="assets/icons.svg#chevron-right"/></svg></button></div><div class="history-filter"><label for="history-status">Situação</label><select id="history-status"><option value="">Todos</option><option value="recorded">Registrado</option><option value="weekend">Fim de semana (FDS)</option><option value="medical">Atestado</option><option value="not_applicable">N/A · Não se aplica</option></select></div><span id="history-summary" role="status" aria-live="polite"></span></div>
         <div id="history-table" class="history-card"></div>
         <p class="footnote">As ocorrências FDS, N/A e ATESTADO não somam horas. Dias em branco na planilha não viram faltas.</p>
       </section>
