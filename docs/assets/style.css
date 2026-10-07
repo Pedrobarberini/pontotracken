@@ -55,3 +55,5 @@
 .punch-card{background:#f1f7e9;border-color:#dce9ce}.model-card{background:#f3f7ed}
 .small-avatar,.stat-icon,.admin-badge{background:#edf5e3;color:#3c711a}
 @media(max-width:680px){.nav-button.active{background:var(--bg);color:#3c711a}}
+.month-toolbar{flex-wrap:wrap;gap:12px 18px}.month-picker{display:flex;align-items:center;gap:6px;min-width:0}.history-filter{display:flex;align-items:center;gap:10px}.history-filter label{margin:0;font-size:.875rem;font-weight:500;color:var(--muted)}.history-filter select{min-height:43px;width:205px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit;font-size:.875rem}.history-filter select:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+@media(max-width:680px){.month-picker,.history-filter{width:100%}.month-picker input{flex:1;width:0;min-width:0}.history-filter select{flex:1;min-width:0}.month-toolbar>span{margin:0}}

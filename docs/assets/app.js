@@ -2,7 +2,7 @@ import {createAdmin} from './admin.js';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
 import {apiBase,demoHref} from './connection.js?v=demo-2';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=demo-2'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=history-1'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -14,7 +14,7 @@ function apiOptions(options={}){
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const bootContent = $('#boot').innerHTML;
-const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', today: null, preview: null, file: null, auth: null, authModule: null, authPromise: null, restorePromise: null, signingOut: false, authMode: 'login', authenticating: false, punchRequest: null };
+const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', historyStatus: '', today: null, preview: null, file: null, auth: null, authModule: null, authPromise: null, restorePromise: null, signingOut: false, authMode: 'login', authenticating: false, punchRequest: null };
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="assets/icons.svg#${name}"/></svg>`;
 const dateObject = date => new Date(`${date}T12:00:00Z`);
@@ -252,8 +252,8 @@ function renderToday(day) {
   if (count===0 || active) timeline.push(`<div class="timeline-item"><span class="timeline-dot empty"></span><div><span class="muted">${active?'Saída pendente':'Entrada ainda não registrada'}</span><strong class="muted">—</strong></div></div>`);
   $('#today-timeline').innerHTML=timeline.join('');
 }
-function recordsTable(rows,{preview=false}={}) {
-  if(!rows.length) return `<div class="empty-state">${icon('calendar')}<strong>Nenhum registro por aqui.</strong><span>${preview?'Não há células válidas para importar.':'Registre seu ponto ou importe seu histórico do Excel.'}</span></div>`;
+function recordsTable(rows,{preview=false,filtered=false}={}) {
+  if(!rows.length) return `<div class="empty-state">${icon('calendar')}<strong>${filtered?'Nenhum registro nesta situação.':'Nenhum registro por aqui.'}</strong><span>${filtered?'Escolha outra situação ou outro mês para consultar.':preview?'Não há células válidas para importar.':'Registre seu ponto ou importe seu histórico do Excel.'}</span></div>`;
   const header=preview ? ['Data','Marcações / ocorrência','Horas','Importação'] : ['Data','Marcações','Horas','Situação','Origem'];
   const body=rows.map(row=>{
     const weekday=new Intl.DateTimeFormat('pt-BR',{weekday:'short',timeZone:state.timezone}).format(dateObject(row.date)).replace('.','');
@@ -296,14 +296,17 @@ $('#confirm-punch').onclick=async()=>{
 async function loadHistory() {
   if(!state.session?.user) return; const sequence=(state.historySequence||0)+1; state.historySequence=sequence; $('#data-error').hidden=true;
   $('#history-table').innerHTML='<div class="empty-state">Carregando registros…</div>';
-  try { const result=await api('records',{query:`&month=${encodeURIComponent(state.month)}`}); if(sequence!==state.historySequence)return;
-    $('#history-table').innerHTML=recordsTable(result.rows); $('#history-summary').textContent=`${result.summary.days} ${result.summary.days===1?'dia':'dias'} com ponto · ${hours(result.summary.minutes)}`;
+  $('#history-summary').textContent='';
+  try { const result=await api('records',{query:historyQuery()}); if(sequence!==state.historySequence)return;
+    $('#history-table').innerHTML=recordsTable(result.rows,{filtered:Boolean(state.historyStatus)}); $('#history-summary').textContent=`${result.rows.length} ${result.rows.length===1?'dia':'dias'} · ${hours(result.summary.minutes)}`;
   }catch(error){if(sequence===state.historySequence){$('#history-table').innerHTML='<div class="empty-state">Não foi possível carregar os registros.</div>';showDataError(error.message);}}
 }
+function historyQuery(){return `&month=${encodeURIComponent(state.month)}${state.historyStatus?`&status=${encodeURIComponent(state.historyStatus)}`:''}`;}
 function moveMonth(amount) {const [y,m]=state.month.split('-').map(Number);const date=new Date(Date.UTC(y,m-1+amount,1));state.month=date.toISOString().slice(0,7);$('#history-month').value=state.month;loadHistory();}
 $('#history-month').onchange=()=>{if(!$('#history-month').value)return;state.month=$('#history-month').value;loadHistory();};
+$('#history-status').onchange=()=>{state.historyStatus=$('#history-status').value;loadHistory();};
 $('#prev-month').onclick=()=>moveMonth(-1); $('#next-month').onclick=()=>moveMonth(1);
-$('#export').onclick=()=>download(`api.php?action=export&month=${encodeURIComponent(state.month)}`);
+$('#export').onclick=()=>download(`api.php?action=export${historyQuery()}`);
 $('#template').onclick=()=>download('api.php?action=template');
 async function download(url) {
   if(demoClient){try{await demoClient.demoDownload(url);}catch(error){toast(error.message,true);}return;}

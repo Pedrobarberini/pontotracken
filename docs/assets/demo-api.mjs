@@ -114,9 +114,10 @@ export async function demoApi(action,{data=null,query=''}={}){
   if(!loggedIn)error('Abra a demonstração para continuar.',401);
   if(action==='logout'){loggedIn=false;preview=null;return {ok:true};}
   if(action==='records'){
-    const month=new URLSearchParams(query.replace(/^&/,'')).get('month')||dateNow().slice(0,7);
+    const params=new URLSearchParams(query.replace(/^&/,'')),month=params.get('month')||dateNow().slice(0,7),status=params.get('status')||'';
     if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))error('Mês inválido.');
-    const rows=[...days.values()].filter(d=>d.date.startsWith(month+'-')).sort((a,b)=>b.date.localeCompare(a.date)).map(decorate);
+    if(!['','recorded','weekend','medical','not_applicable'].includes(status))error('Situação inválida.');
+    const rows=[...days.values()].filter(d=>d.date.startsWith(month+'-')&&(!status||d.status===status)).sort((a,b)=>b.date.localeCompare(a.date)).map(decorate);
     return {rows,today:days.has(dateNow())?decorate(days.get(dateNow())):null,summary:{minutes:rows.reduce((sum,row)=>sum+row.minutes,0),days:rows.filter(row=>row.times.length).length,pending:rows.filter(row=>row.incomplete).length,medical:rows.filter(row=>row.status==='medical').length}};
   }
   if(action==='punch'){
@@ -156,7 +157,7 @@ export async function demoDownload(url){
     const bytes=XLSX.write(book,{bookType:'xlsx',type:'array'});saveBlob(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'modelo-ponto.xlsx');return;
   }
   if(params.get('action')==='export'){
-    const month=params.get('month');const {rows}=await demoApi('records',{query:`&month=${month}`});
+    const month=params.get('month');const {rows}=await demoApi('records',{query:`&${params.toString()}`});
     const escape=value=>'"'+String(value).replaceAll('"','""')+'"';
     const lines=[['Data','Marcações','Situação','Horas trabalhadas','Origem']];
     for(const row of rows.reverse())lines.push([row.date.split('-').reverse().join('/'),row.times.map(t=>t.slice(0,5)).join(' | '),row.label,`${String(Math.floor(row.minutes/60)).padStart(2,'0')}:${String(row.minutes%60).padStart(2,'0')}`,row.source]);
