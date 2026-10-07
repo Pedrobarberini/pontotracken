@@ -8,7 +8,7 @@
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
   <link rel="stylesheet" href="assets/style.css?v=tracken-5">
-  <script type="module" src="assets/app.js?v=tracken-5"></script>
+  <script type="module" src="assets/app.js?v=demo-2"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p>Carregando seu ponto…</p></div>
@@ -36,7 +36,7 @@
       <button id="google-login" class="button google-button full" type="button"><img src="assets/google-g.png" width="20" height="20" alt="">Entrar com Google</button>
       <div class="auth-register"><span id="auth-switch-label">Primeiro acesso?</span><button id="register-toggle" class="text-button" type="button">Criar conta</button></div>
       <p id="setup-note" class="setup-note" hidden>O login da empresa ainda está sendo configurado. Enquanto isso, você pode conhecer o site pela demonstração local.</p>
-      <div id="demo-access" class="demo-access" hidden><span>Conheça o site</span><button id="demo-login" class="button secondary full" type="button"><svg class="icon"><use href="assets/icons.svg#play"/></svg>Abrir demonstração</button><small>Ambiente local com dados de exemplo.</small></div>
+      <div id="demo-access" class="demo-access" hidden><span>Conheça o site</span><button id="demo-login" class="button secondary full" type="button"><svg class="icon"><use href="assets/icons.svg#play"/></svg>Abrir demonstração</button><small>Explore o aplicativo com dados de exemplo, sem cadastro.</small></div>
       <div class="login-security"><svg class="icon"><use href="assets/icons.svg#lock"/></svg>Acesso individual com Firebase</div>
     </div>
   </div>
@@ -56,7 +56,7 @@
   </aside>
   <div class="workspace">
     <header class="topbar"><span class="breadcrumb">Minha jornada <span>/</span> <strong id="breadcrumb-view">Meu ponto</strong></span><div class="topbar-right"><span id="mode-badge" class="mode-badge" hidden>Demonstração</span><span id="header-date"></span><span class="small-avatar" id="small-avatar">V</span><button id="mobile-logout" class="icon-button mobile-logout" aria-label="Sair da conta"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div></header>
-    <div id="demo-banner" class="demo-banner" hidden><svg class="icon"><use href="assets/icons.svg#info"/></svg>Você está na demonstração local. Os dados e as marcações são de teste.</div>
+    <div id="demo-banner" class="demo-banner" hidden><svg class="icon"><use href="assets/icons.svg#info"/></svg>Demonstração para apresentação. Dados de exemplo; as marcações de teste são descartadas ao atualizar a página.</div>
     <main class="content">
       <section id="view-registro" class="view">
         <div class="page-heading"><div><span class="eyebrow muted">UM DIA DE CADA VEZ</span><h1>Meu ponto<span>.</span></h1><p>Acompanhe sua jornada e registre suas marcações.</p></div><button class="button secondary" data-open-import><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar Excel</button></div>
