@@ -1,9 +1,9 @@
-import {createAdmin} from './admin.js?v=journey-2';
-import {createJourney} from './journey.js?v=journey-2';
+import {createAdmin} from './admin.js?v=api-1';
+import {createJourney} from './journey.js?v=api-1';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
-import {apiBase,demoHref} from './connection.js?v=journey-2';
+import {apiBase,demoHref} from './connection.js?v=api-1';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=journey-2'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=api-1'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -42,7 +42,7 @@ async function api(action, {method='GET',data=null,query='',retried=false}={}) {
   if (method !== 'GET') options.headers['X-CSRF-Token'] = state.session.csrf;
   if (data instanceof FormData) options.body=data;
   else if (data !== null) { options.headers['Content-Type']='application/json'; options.body=JSON.stringify(data); }
-  const response = await fetch(apiURL(`api.php?action=${encodeURIComponent(action)}${query}`),apiOptions(options));
+  const response = await fetch(apiURL(`api?action=${encodeURIComponent(action)}${query}`),apiOptions(options));
   let result; try { result = await response.json(); } catch { throw new Error('O servidor não respondeu corretamente. Tente novamente.'); }
   if (!response.ok) {
     let error = new Error(result.error || 'Não foi possível concluir a ação.'); error.status=response.status; error.code=result.code;
@@ -310,8 +310,8 @@ $('#history-month').onchange=()=>{if(!$('#history-month').value)return;state.mon
 const historyStatusSelect=$('#history-status');
 if(historyStatusSelect)historyStatusSelect.onchange=()=>{state.historyStatus=historyStatusSelect.value;loadHistory();};
 $('#prev-month').onclick=()=>moveMonth(-1); $('#next-month').onclick=()=>moveMonth(1);
-$('#export').onclick=()=>download(`api.php?action=export${historyQuery()}`);
-$('#template').onclick=()=>download('api.php?action=template');
+$('#export').onclick=()=>download(`api?action=export${historyQuery()}`);
+$('#template').onclick=()=>download('api?action=template');
 async function download(url) {
   if(demoClient){try{await demoClient.demoDownload(url);}catch(error){toast(error.message,true);}return;}
   try { const response=await fetch(apiURL(url),apiOptions()); if(!response.ok){const result=await response.json();throw new Error(result.error || 'Não foi possível baixar o arquivo.');}

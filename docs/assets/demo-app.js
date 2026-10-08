@@ -169,8 +169,8 @@ async function loadHistory() {
 function moveMonth(amount) {const [y,m]=state.month.split('-').map(Number);const date=new Date(Date.UTC(y,m-1+amount,1));state.month=date.toISOString().slice(0,7);$('#history-month').value=state.month;loadHistory();}
 $('#history-month').onchange=()=>{if(!$('#history-month').value)return;state.month=$('#history-month').value;loadHistory();};
 $('#prev-month').onclick=()=>moveMonth(-1); $('#next-month').onclick=()=>moveMonth(1);
-$('#export').onclick=()=>download(`api.php?action=export&month=${encodeURIComponent(state.month)}`);
-$('#template').onclick=()=>download('api.php?action=template');
+$('#export').onclick=()=>download(`api?action=export&month=${encodeURIComponent(state.month)}`);
+$('#template').onclick=()=>download('api?action=template');
 async function download(url){try{await demoDownload(url);}catch(error){toast(error.message,true);}}
 function invalidatePreview(){state.preview=null;$('#preview-panel').hidden=true;}
 function setFile(file) {
