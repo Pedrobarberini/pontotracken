@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#14343d"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=motion-2">
-  <script type="module" src="assets/app.js?v=history-1"></script>
+  <link rel="stylesheet" href="assets/style.css?v=journey-1">
+  <script type="module" src="assets/app.js?v=journey-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p class="boot-copy">Carregando seu ponto…</p></div>
@@ -48,6 +48,7 @@
     <nav aria-label="Menu principal">
       <button data-view="registro" class="nav-button active"><svg class="icon"><use href="assets/icons.svg#clock"/></svg>Meu ponto</button>
       <button data-view="espelho" class="nav-button"><svg class="icon"><use href="assets/icons.svg#calendar"/></svg>Espelho de ponto</button>
+      <button data-view="jornada" class="nav-button"><svg class="icon"><use href="assets/icons.svg#clock"/></svg>Status e horas extras</button>
       <button data-view="importar" class="nav-button"><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar planilha</button>
       <button id="admin-nav" data-view="admin" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#shield"/></svg>Administração</button>
     </nav>
@@ -87,8 +88,10 @@
         </div>
         <section id="preview-panel" class="history-card preview-panel" hidden><div class="card-heading"><div><h2>Confira sua importação</h2><p id="preview-summary"></p></div><button id="commit-button" class="button primary">Salvar registros</button></div><div id="import-warnings" hidden></div><div id="preview-table"></div></section>
       </section>
+      <section id="view-jornada" class="view" hidden><div class="page-heading"><div><span class="eyebrow muted">MINHA JORNADA</span><h1>Status e horas extras<span>.</span></h1><p>Acompanhe sua atividade e registre os períodos adicionais.</p></div></div><div id="journey-tools"></div></section>
       <section id="view-admin" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">GESTÃO DA EMPRESA</span><h1>Administração<span>.</span></h1><p>Gerencie o acesso da equipe e mantenha os registros em dia.</p></div><span class="admin-badge">Acesso ADMIN</span></div>
+        <div id="team-panel"></div>
         <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="users" class="active" aria-pressed="true">Funcionários</button><button data-admin-tab="records" aria-pressed="false">Ajustar ponto</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
         <div id="admin-error" class="data-error" role="alert" hidden></div>
         <section id="admin-panel-users" class="admin-panel">
