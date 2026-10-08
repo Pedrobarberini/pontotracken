@@ -57,3 +57,37 @@
 @media(max-width:680px){.nav-button.active{background:var(--bg);color:#3c711a}}
 .month-toolbar{flex-wrap:wrap;gap:12px 18px}.month-picker{display:flex;align-items:center;gap:6px;min-width:0}.history-filter{display:flex;align-items:center;gap:10px}.history-filter label{margin:0;font-size:.875rem;font-weight:500;color:var(--muted)}.history-filter select{min-height:43px;width:205px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit;font-size:.875rem}.history-filter select:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 @media(max-width:680px){.month-picker,.history-filter{width:100%}.month-picker input{flex:1;width:0;min-width:0}.history-filter select{flex:1;min-width:0}.month-toolbar>span{margin:0}}
+
+/* Motion follows screen visibility, including restored login sessions. */
+.boot-progress{width:128px;height:3px;margin-top:14px;overflow:hidden;border-radius:99px;background:#e0ecd7}
+.boot-progress:before{content:"";display:block;width:38%;height:100%;border-radius:inherit;background:var(--accent)}
+@media(prefers-reduced-motion:no-preference){
+  #boot:not([hidden]) .boot-loader img{animation:ponto-logo-breathe 2.8s ease-in-out infinite}
+  #boot:not([hidden]) .boot-title{animation:ponto-enter-up .55s cubic-bezier(.22,1,.36,1) backwards}
+  #boot:not([hidden]) .boot-copy{animation:ponto-enter-up .55s .1s cubic-bezier(.22,1,.36,1) backwards}
+  #boot:not([hidden]) .boot-progress:before{animation:ponto-progress 1.7s ease-in-out infinite}
+  #login:not([hidden]) .login-intro>.brand,
+  #login:not([hidden]) .login-copy>.eyebrow,
+  #login:not([hidden]) .login-copy>h1,
+  #login:not([hidden]) .login-copy>p,
+  #login:not([hidden]) .login-clock,
+  #login:not([hidden]) .login-footer{animation:ponto-enter-up .65s cubic-bezier(.22,1,.36,1) backwards}
+  #login:not([hidden]) .login-copy>.eyebrow{animation-delay:.06s}
+  #login:not([hidden]) .login-copy>h1{animation-delay:.12s}
+  #login:not([hidden]) .login-copy>p{animation-delay:.18s}
+  #login:not([hidden]) .login-clock{animation-delay:.24s}
+  #login:not([hidden]) .login-footer{animation-delay:.28s}
+  #login:not([hidden]) .login-form-card{animation:ponto-enter-up .7s .1s cubic-bezier(.22,1,.36,1) backwards}
+  #app:not([hidden])>.sidebar{animation:ponto-enter-side .6s cubic-bezier(.22,1,.36,1) backwards}
+  #app:not([hidden]) .topbar{animation:ponto-enter-up .5s cubic-bezier(.22,1,.36,1) backwards}
+  #app:not([hidden]) .content{animation:ponto-enter-up .65s .08s cubic-bezier(.22,1,.36,1) backwards}
+  #app:not([hidden]) #view-registro:not([hidden]) .stats-grid>.stat{animation:ponto-enter-up .55s .14s cubic-bezier(.22,1,.36,1) backwards}
+  #app:not([hidden]) #view-registro:not([hidden]) .stats-grid>.stat:nth-child(2){animation-delay:.2s}
+  #app:not([hidden]) #view-registro:not([hidden]) .stats-grid>.stat:nth-child(3){animation-delay:.26s}
+  #app:not([hidden]) #view-registro:not([hidden]) .stats-grid>.stat:nth-child(4){animation-delay:.32s}
+}
+@keyframes ponto-enter-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ponto-enter-side{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes ponto-logo-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.025)}}
+@keyframes ponto-progress{0%{transform:translateX(-105%)}100%{transform:translateX(370%)}}
+@media(prefers-reduced-motion:reduce){.boot-loader:before{animation:none}.boot-progress:before{width:100%}}
