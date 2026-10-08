@@ -1,4 +1,5 @@
 /* Presentation simulator. No backend, Firebase, credentials, or production data. */
+import {journeyDemo} from './journey-demo.mjs?v=journey-1';
 const MONTHS = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,MAIO:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
 const LABELS = {recorded:'Registrado',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 let loggedIn=false, preview=null;
@@ -108,10 +109,11 @@ export async function parseSpreadsheet(file,year){
   return {rows,warnings,periods:columns.map(c=>({year:c.year,month:c.month})),header_row:header+1,filename:file.name.slice(0,180),id:crypto.randomUUID()};
 }
 export async function demoApi(action,{data=null,query=''}={}){
-  if(action==='session')return {user:loggedIn?{uid:'presentation',name:'Visitante',email:'Demonstração',demo:true}:null,csrf:'presentation-only',demoAllowed:true,firebaseReady:false,firebase:null,timezone:'America/Sao_Paulo'};
+  if(action==='session')return {user:loggedIn?{uid:'presentation',name:'Visitante',email:'Demonstração',demo:true,role:'admin'}:null,csrf:'presentation-only',demoAllowed:true,firebaseReady:false,firebase:null,timezone:'America/Sao_Paulo'};
   if(action==='demo'){loggedIn=true;seed();return {ok:true,csrf:'presentation-only'};}
   if(action==='login')error('O login Firebase ainda não está configurado nesta apresentação.',503);
   if(!loggedIn)error('Abra a demonstração para continuar.',401);
+  const journey=journeyDemo(action,{data:data||{},query,dateNow,days,parseCell});if(journey)return journey;
   if(action==='logout'){loggedIn=false;preview=null;return {ok:true};}
   if(action==='records'){
     const params=new URLSearchParams(query.replace(/^&/,'')),month=params.get('month')||dateNow().slice(0,7),status=params.get('status')||'';

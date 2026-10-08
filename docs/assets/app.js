@@ -1,8 +1,9 @@
-import {createAdmin} from './admin.js';
+import {createAdmin} from './admin.js?v=journey-1';
+import {createJourney} from './journey.js?v=journey-1';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
-import {apiBase,demoHref} from './connection.js?v=demo-2';
+import {apiBase,demoHref} from './connection.js?v=journey-1';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=history-1'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=journey-1'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -90,6 +91,7 @@ async function bootstrap() {
   }
 }
 function showLogin() {
+  journey.reset();
   admin.reset();
   $('#app').hidden=true; $('#login').hidden=false; $('#boot').hidden=true;
   const ready=state.session.firebaseReady;
@@ -109,8 +111,8 @@ async function showApp() {
   $('#footer-zone').textContent=state.timezone;
   $('.timezone-pill').textContent=state.timezone==='America/Sao_Paulo' ? 'Horário de Brasília' : state.timezone;
   state.month=currentMonth(); $('#history-month').value=state.month; $('#import-year').value=currentParts().year;
-  const view=location.hash.replace('#',''); switchView(['registro','espelho','importar',...(user.role==='admin'?['admin']:[])].includes(view) ? view : 'registro', false);
-  updateClock(); await loadHome(); if(state.view==='espelho') await loadHistory(); if(state.view==='admin') await admin.open();
+  const view=location.hash.replace('#',''); switchView(['registro','espelho','importar','jornada',...(user.role==='admin'?['admin']:[])].includes(view) ? view : 'registro', false);
+  updateClock(); await loadHome(); await journey.open(); if(state.view==='espelho') await loadHistory(); if(state.view==='admin'){await admin.open();await journey.openAdmin();}
 }
 async function firebaseAuth() {
   if (state.auth) return [state.auth,state.authModule];
@@ -220,11 +222,12 @@ async function logout(){
 $('#logout').onclick=logout; $('#mobile-logout').onclick=logout;
 function switchView(view, load=true) {
   if(view==='admin'&&state.session?.user?.role!=='admin')view='registro';
-  state.view=view; const names={registro:'Meu ponto',espelho:'Espelho de ponto',importar:'Importar planilha',admin:'Administração'};
+  state.view=view; const names={registro:'Meu ponto',espelho:'Espelho de ponto',importar:'Importar planilha',jornada:'Status e horas extras',admin:'Administração'};
   for(const el of $$('.view')) el.hidden=el.id!==`view-${view}`;
   for(const btn of $$('[data-view]')) { const active=btn.dataset.view===view; btn.classList.toggle('active',active); if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current'); }
   $('#breadcrumb-view').textContent=names[view]; history.replaceState(null,'',`#${view}`);
-  if(load && view==='espelho') loadHistory(); if(load && view==='registro' && state.session?.user) loadHome(); if(load && view==='admin') admin.open();
+  if(load)window.scrollTo({top:0,behavior:'instant'});
+  if(load && view==='espelho') loadHistory(); if(load && view==='registro' && state.session?.user) loadHome(); if(load && view==='jornada')journey.open(); if(load && view==='admin'){admin.open();journey.openAdmin();}
 }
 $$('[data-view]').forEach(btn=>btn.onclick=()=>switchView(btn.dataset.view));
 $$('[data-open-import]').forEach(btn=>btn.onclick=()=>switchView('importar'));
@@ -352,4 +355,5 @@ $('#commit-button').onclick=async()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden && state.session?.user){loadHome();if(state.view==='espelho')loadHistory();}});
 setInterval(updateClock,1000);
 const admin=createAdmin({api,busy,toast,formatDate,hours,currentMonth,currentParts,onCorrection:()=>loadHome()});
+const journey=createJourney({api,busy,toast,hours,currentMonth,currentParts,getUser:()=>state.session?.user});
 bootstrap();
