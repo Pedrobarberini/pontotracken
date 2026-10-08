@@ -1,5 +1,5 @@
 /* Presentation simulator. No backend, Firebase, credentials, or production data. */
-import {journeyDemo} from './journey-demo.mjs?v=journey-1';
+import {journeyDemo} from './journey-demo.mjs?v=journey-2';
 const MONTHS = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,MAIO:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
 const LABELS = {recorded:'Registrado',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 let loggedIn=false, preview=null;
