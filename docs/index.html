@@ -4,11 +4,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://ponto-apresentacao-empresa.barberinipedro.chatgpt.site https://*.googleapis.com https://*.firebaseapp.com https://*.gstatic.com https://apis.google.com; frame-src https://*.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="referrer" content="same-origin">
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#14343d"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
+  <meta name="theme-color" content="#000000"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=api-1">
-  <script type="module" src="assets/app.js?v=api-1"></script>
+  <link rel="stylesheet" href="assets/style.css?v=phase1-1">
+  <script type="module" src="assets/app.js?v=phase1-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p class="boot-copy">Carregando seu ponto…</p></div>
@@ -42,7 +42,7 @@
   </div>
 </main>
 <div id="app" class="app-layout" hidden>
-  <aside class="sidebar">
+  <aside id="sidebar" class="sidebar">
     <a class="brand" href="#registro" aria-label="PontoTracken — início"><img class="brand-logo" src="assets/pontotracken-mark-v2.webp" width="40" height="40" alt=""><span class="brand-name">Ponto<strong>Track<span>en</span></strong></span></a>
     <span class="nav-label">MINHA JORNADA</span>
     <nav aria-label="Menu principal">
@@ -50,13 +50,18 @@
       <button data-view="espelho" class="nav-button"><svg class="icon"><use href="assets/icons.svg#calendar"/></svg>Espelho de ponto</button>
       <button data-view="jornada" class="nav-button"><svg class="icon"><use href="assets/icons.svg#clock"/></svg>Status e horas extras</button>
       <button data-view="importar" class="nav-button"><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar planilha</button>
+    </nav>
+    <span class="nav-label">EMPRESA</span>
+    <nav aria-label="Empresa">
       <button id="admin-nav" data-view="admin" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#shield"/></svg>Administração</button>
+      <button data-view="visao" class="nav-button"><svg class="icon"><use href="assets/icons.svg#file"/></svg>Visão do produto</button>
     </nav>
     <div class="sidebar-note"><svg class="icon"><use href="assets/icons.svg#shield"/></svg><strong>Seu ponto é pessoal.</strong><p>Seus registros ficam vinculados à sua conta.</p></div>
     <div class="sidebar-user"><span id="avatar" class="avatar">V</span><div><strong id="user-name">Visitante</strong><span id="user-role">Funcionário</span></div><button id="logout" class="icon-button" aria-label="Sair da conta" title="Sair"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div>
   </aside>
+  <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Fechar menu" tabindex="-1" hidden></button>
   <div class="workspace">
-    <header class="topbar"><span class="breadcrumb">Minha jornada <span>/</span> <strong id="breadcrumb-view">Meu ponto</strong></span><div class="topbar-right"><span id="mode-badge" class="mode-badge" hidden>Demonstração</span><span id="header-date"></span><span class="small-avatar" id="small-avatar">V</span><button id="mobile-logout" class="icon-button mobile-logout" aria-label="Sair da conta"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div></header>
+    <header class="topbar"><button id="menu-toggle" class="icon-button menu-toggle" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><span class="breadcrumb"><span id="breadcrumb-group">Minha jornada</span><span>/</span><strong id="breadcrumb-view">Meu ponto</strong></span><div class="topbar-right"><span id="mode-badge" class="mode-badge" hidden>Demonstração</span><span id="header-date"></span><span class="small-avatar" id="small-avatar">V</span><button id="mobile-logout" class="icon-button mobile-logout" aria-label="Sair da conta"><svg class="icon"><use href="assets/icons.svg#logout"/></svg></button></div></header>
     <div id="demo-banner" class="demo-banner" hidden><svg class="icon"><use href="assets/icons.svg#info"/></svg>Demonstração para apresentação. Dados de exemplo; as marcações de teste são descartadas ao atualizar a página.</div>
     <main class="content">
       <section id="view-registro" class="view">
@@ -110,6 +115,15 @@
           <div class="admin-toolbar"><div class="admin-field grow"><label for="admin-history-employee">Histórico de</label><select id="admin-history-employee"><option value="">Toda a equipe</option></select></div><button id="admin-refresh-history" class="button secondary">Atualizar histórico</button></div><div id="admin-history-list"></div>
           <div class="admin-pagination"><button id="admin-history-prev" class="button secondary" disabled>Anterior</button><span id="admin-history-page"></span><button id="admin-history-next" class="button secondary" disabled>Próxima</button></div>
         </section>
+      </section>
+      <section id="view-visao" class="view" hidden>
+        <div class="page-heading"><div><h1>Visão do produto<span>.</span></h1><p>Uma base de jornada que pode evoluir para acompanhar toda a vida do colaborador.</p></div></div>
+        <div class="phase-list">
+          <article class="product-phase current"><div class="phase-number">01</div><div><div class="phase-heading"><h2>Ponto e jornada</h2><span class="status">Em implantação</span></div><p>A rotina de registro, conferência e gestão da equipe em um só lugar.</p><ul class="phase-features"><li>Marcações, espelho e histórico do Excel</li><li>Acesso individual com aprovação do ADMIN</li><li>Status, jornadas e indicadores da equipe</li><li>Horas extras com solicitante, atividade, entrega, motivo e responsável pela análise</li></ul><div class="readiness-note"><strong>Próxima etapa da implantação</strong><p>Para substituir o ponto oficial, faltam a estrutura de registros originais, comprovantes assinados, arquivos AFD/AEJ e os requisitos técnicos e documentais do REP-P. O histórico do Excel é tratado como histórico importado.</p></div></div></article>
+          <article class="product-phase"><div class="phase-number">02</div><div><div class="phase-heading"><h2>Ficha do colaborador</h2><span class="status existing">Planejado</span></div><p>Linha do tempo, documentos e vencimentos, ciências e anexos, com permissões de Colaborador, Gestor, RH e ADMIN.</p></div></article>
+          <article class="product-phase"><div class="phase-number">03</div><div><div class="phase-heading"><h2>Rotina de RH</h2><span class="status existing">Planejado</span></div><p>Férias, integração e desligamento, treinamentos e controle de ativos.</p></div></article>
+          <article class="product-phase"><div class="phase-number">04</div><div><div class="phase-heading"><h2>Desenvolvimento</h2><span class="status existing">Planejado</span></div><p>Conversas individuais, avaliações, planos de desenvolvimento e indicadores.</p></div></article>
+        </div>
       </section>
       <div id="data-error" class="data-error" role="alert" hidden><span></span><button id="retry-data" class="text-button">Tentar novamente</button></div>
     </main>

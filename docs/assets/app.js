@@ -1,9 +1,9 @@
-import {createAdmin} from './admin.js?v=api-1';
-import {createJourney} from './journey.js?v=api-1';
+import {createAdmin} from './admin.js?v=phase1-1';
+import {createJourney} from './journey.js?v=phase1-1';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
-import {apiBase,demoHref} from './connection.js?v=api-1';
+import {apiBase,demoHref} from './connection.js?v=phase1-1';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=api-1'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=phase1-1'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -14,6 +14,29 @@ function apiOptions(options={}){
 }
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+const mobileMenu=matchMedia('(max-width:860px)');
+function setMenu(open,restoreFocus=false){
+  const visible=Boolean(open&&mobileMenu.matches);
+  $('#sidebar').classList.toggle('open',visible); $('#sidebar').inert=mobileMenu.matches&&!visible;
+  $('#sidebar-backdrop').hidden=!visible; $('#sidebar-backdrop').classList.toggle('open',visible);
+  $('#menu-toggle').setAttribute('aria-expanded',String(visible)); $('#menu-toggle').setAttribute('aria-label',visible?'Fechar menu':'Abrir menu');
+  document.body.style.overflow=visible?'hidden':'';
+  if(restoreFocus)$('#menu-toggle').focus();
+}
+$('#menu-toggle').onclick=()=>{const open=$('#menu-toggle').getAttribute('aria-expanded')!=='true';setMenu(open);if(open)$('#sidebar .nav-button.active').focus();};
+$('#sidebar-backdrop').onclick=()=>setMenu(false,true);
+mobileMenu.addEventListener('change',()=>setMenu(false));
+document.addEventListener('keydown',event=>{
+  if($('#menu-toggle').getAttribute('aria-expanded')!=='true')return;
+  if(event.key==='Escape'){event.preventDefault();setMenu(false,true);}
+  if(event.key==='Tab'){
+    const focusable=[...$('#sidebar').querySelectorAll('a[href],button:not([disabled])')].filter(el=>el.getClientRects().length);
+    const first=focusable[0],last=focusable.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+});
+setMenu(false);
 const bootContent = $('#boot').innerHTML;
 const state = { session: null, clockOffset: 0, timezone: 'America/Sao_Paulo', view: 'registro', month: '', historyStatus: '', today: null, preview: null, file: null, auth: null, authModule: null, authPromise: null, restorePromise: null, signingOut: false, authMode: 'login', authenticating: false, punchRequest: null };
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -91,6 +114,7 @@ async function bootstrap() {
   }
 }
 function showLogin() {
+  setMenu(false);
   journey.reset();
   admin.reset();
   $('#app').hidden=true; $('#login').hidden=false; $('#boot').hidden=true;
@@ -111,7 +135,7 @@ async function showApp() {
   $('#footer-zone').textContent=state.timezone;
   $('.timezone-pill').textContent=state.timezone==='America/Sao_Paulo' ? 'Horário de Brasília' : state.timezone;
   state.month=currentMonth(); $('#history-month').value=state.month; $('#import-year').value=currentParts().year;
-  const view=location.hash.replace('#',''); switchView(['registro','espelho','importar','jornada',...(user.role==='admin'?['admin']:[])].includes(view) ? view : 'registro', false);
+  const view=location.hash.replace('#',''); switchView(['registro','espelho','importar','jornada','visao',...(user.role==='admin'?['admin']:[])].includes(view) ? view : 'registro', false);
   updateClock(); await loadHome(); await journey.open(); if(state.view==='espelho') await loadHistory(); if(state.view==='admin'){await admin.open();await journey.openAdmin();}
 }
 async function firebaseAuth() {
@@ -221,15 +245,17 @@ async function logout(){
 }
 $('#logout').onclick=logout; $('#mobile-logout').onclick=logout;
 function switchView(view, load=true) {
+  if(!['registro','espelho','importar','jornada','admin','visao'].includes(view))view='registro';
   if(view==='admin'&&state.session?.user?.role!=='admin')view='registro';
-  state.view=view; const names={registro:'Meu ponto',espelho:'Espelho de ponto',importar:'Importar planilha',jornada:'Status e horas extras',admin:'Administração'};
+  setMenu(false,$('#menu-toggle').getAttribute('aria-expanded')==='true'); state.view=view; const names={registro:'Meu ponto',espelho:'Espelho de ponto',importar:'Importar planilha',jornada:'Status e horas extras',admin:'Administração',visao:'Visão do produto'};
   for(const el of $$('.view')) el.hidden=el.id!==`view-${view}`;
   for(const btn of $$('[data-view]')) { const active=btn.dataset.view===view; btn.classList.toggle('active',active); if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current'); }
-  $('#breadcrumb-view').textContent=names[view]; history.replaceState(null,'',`#${view}`);
+  $('#breadcrumb-view').textContent=names[view]; $('#breadcrumb-group').textContent=['admin','visao'].includes(view)?'Empresa':'Minha jornada'; history.replaceState(null,'',`#${view}`);
   if(load)window.scrollTo({top:0,behavior:'instant'});
   if(load && view==='espelho') loadHistory(); if(load && view==='registro' && state.session?.user) loadHome(); if(load && view==='jornada')journey.open(); if(load && view==='admin'){admin.open();journey.openAdmin();}
 }
 $$('[data-view]').forEach(btn=>btn.onclick=()=>switchView(btn.dataset.view));
+$('#sidebar .brand').onclick=event=>{event.preventDefault();switchView('registro');};
 $$('[data-open-import]').forEach(btn=>btn.onclick=()=>switchView('importar'));
 $$('[data-open-history]').forEach(btn=>btn.onclick=()=>switchView('espelho'));
 function updateClock() {
