@@ -1,11 +1,11 @@
-import { createProvenance } from "../history/provenance.mjs?v=phase2-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=phase2-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=phase2-1";
+import { createProvenance } from "../history/provenance.mjs?v=perf-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=perf-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=perf-1";
 const labels = { pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
   const provenance = createProvenance({ api, formatDate });
-  let team = [], choices = [], records = [], selected = null, tab = "team", access = null, correction = null, usersOffset = 0, historyOffset = 0, usersNext = null, historyNext = null, epoch = 0;
+  let team = [], choices = [], records = [], selected = null, tab = "team", access = null, correction = null, usersOffset = 0, historyOffset = 0, usersNext = null, historyNext = null, epoch = 0, usersSequence = 0, historySequence = 0;
   const report = (error) => {
     $("#admin-error").textContent = error.message;
     $("#admin-error").hidden = false;
@@ -25,20 +25,21 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
   }
   async function users() {
     clearError();
-    const generation = epoch;
+    const generation = epoch, sequence = ++usersSequence, offset = usersOffset;
     $("#admin-users-table").innerHTML = '<div class="empty-state">Carregando funcionários…</div>';
     try {
       const result = await api("admin-users", { query: `&q=${encodeURIComponent($("#admin-search").value.trim())}&status=${$("#admin-status").value}&offset=${usersOffset}` });
-      if (generation !== epoch) return;
+      if (generation !== epoch || sequence !== usersSequence) return;
       team = result.users;
       usersNext = result.nextOffset;
       for (const status of ["pending", "active", "blocked"]) $("#admin-count-" + status).textContent = result.counts[status] || 0;
       $("#admin-users-table").innerHTML = team.length ? `<div class="table-scroll"><table class="records-table admin-users-table"><thead><tr><th>Funcionário</th><th>Acesso</th><th>Ações</th></tr></thead><tbody>${team.map((u) => `<tr><td><strong>${esc(u.name)}</strong><span class="admin-email">${esc(u.email)}</span></td><td><span class="status ${u.status === "blocked" ? "blocked" : u.status === "pending" ? "pending" : ""}">${u.role === "admin" ? "ADMIN" : labels[u.status]}</span></td><td><div class="admin-row-actions"><button class="text-button" data-records-uid="${esc(u.uid)}">Ver ponto</button>${u.role === "admin" ? '<span class="field-hint">Acesso protegido</span>' : `<button class="button ${u.status === "active" ? "secondary" : "primary"} small" data-access-uid="${esc(u.uid)}" data-status="${u.status === "active" ? "blocked" : "active"}">${u.status === "active" ? "Bloquear" : u.status === "blocked" ? "Reativar" : "Aprovar"}</button>`}</div></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><strong>Nenhum cadastro encontrado.</strong><span>Os funcionários aparecem após tentar entrar no site.</span></div>';
-      $("#admin-users-prev").disabled = usersOffset === 0;
+      $("#admin-users-prev").disabled = offset === 0;
       $("#admin-users-next").disabled = usersNext === null;
-      $("#admin-users-page").textContent = `Página ${usersOffset / 50 + 1}`;
+      $("#admin-users-page").textContent = `Página ${offset / 50 + 1}`;
       chooseOptions(team);
     } catch (error) {
+      if (generation !== epoch || sequence !== usersSequence) return;
       report(error);
       $("#admin-users-table").innerHTML = '<div class="empty-state">Não foi possível carregar a equipe. Use Buscar para tentar novamente.</div>';
     }
@@ -130,11 +131,11 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
   }
   async function history() {
     clearError();
-    const generation = epoch;
+    const generation = epoch, sequence = ++historySequence, offset = historyOffset;
     $("#admin-history-list").innerHTML = '<div class="empty-state">Carregando histórico…</div>';
     try {
       const result = await api("admin-history", { query: `&uid=${encodeURIComponent($("#admin-history-employee").value)}&offset=${historyOffset}` });
-      if (generation !== epoch) return;
+      if (generation !== epoch || sequence !== historySequence) return;
       historyNext = result.nextOffset;
       $("#admin-history-list").innerHTML = result.events.length ? result.events.map((event) => {
         const when = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(event.created_at)), point = event.action === "record:correct";
@@ -144,10 +145,11 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
         const before = describe(event.before), after = describe(event.after), title = preparation ? "ETAPA FUTURA" : schedule ? "CONFIGURAÇÃO DE JORNADA" : extra ? overtimeTitles[event.action] || "ALTERAÇÃO DE HORAS EXTRAS" : point ? "CORREÇÃO DE PONTO" : "ALTERAÇÃO DE ACESSO";
         return `<article class="admin-event"><div class="admin-event-heading"><div><span class="eyebrow muted">${title}</span><h3>${esc(event.target_name)}${event.date ? " · " + esc(formatDate(event.date)) : ""}</h3><span class="admin-email">${esc(event.target_email)}</span></div><time>${esc(when)}</time></div><div class="admin-comparison"><div><span>Antes</span><strong>${esc(before)}</strong></div><div><span>Depois</span><strong>${esc(after)}</strong></div></div><p class="admin-reason">${esc(event.reason)}</p><p class="admin-event-actor">Alterado por ${esc(event.actor_name)} · ${esc(event.actor_email)}</p></article>`;
       }).join("") : '<div class="history-card empty-state"><strong>Nenhuma alteração administrativa.</strong><span>As aprovações, bloqueios e correções aparecerão aqui.</span></div>';
-      $("#admin-history-prev").disabled = historyOffset === 0;
+      $("#admin-history-prev").disabled = offset === 0;
       $("#admin-history-next").disabled = historyNext === null;
-      $("#admin-history-page").textContent = `Página ${historyOffset / 50 + 1}`;
+      $("#admin-history-page").textContent = `Página ${offset / 50 + 1}`;
     } catch (error) {
+      if (generation !== epoch || sequence !== historySequence) return;
       report(error);
       $("#admin-history-list").innerHTML = "";
     }

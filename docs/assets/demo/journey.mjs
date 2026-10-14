@@ -1,4 +1,4 @@
-import { calendarContext, enrichCalendar, projectMonth, calendarSummary } from "../calendar.mjs?v=phase2-1";
+import { calendarContext, enrichCalendar, projectMonth, calendarSummary } from "../calendar.mjs?v=perf-1";
 const labels = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const baseSchedule = { start_time: "09:00", end_time: "16:00", break_minutes: 0, expected_minutes: 420, tolerance_minutes: 5, weekdays: "[1,2,3,4,5]", version: 1, effective_date: "2020-01-01" };
 function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {

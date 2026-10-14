@@ -1,21 +1,21 @@
-import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=phase2-1";
-import { hours, createDateFormatters } from "../shared/formatters.mjs?v=phase2-1";
-import { createRecordsTable } from "../shared/records-table.mjs?v=phase2-1";
-import { createApplicationState } from "../core/state.mjs?v=phase2-1";
-import { createClock } from "../core/clock.mjs?v=phase2-1";
-import { createAPIClient } from "../core/api-client.mjs?v=phase2-1";
-import { createAuthentication } from "../core/auth/controller.mjs?v=phase2-1";
-import { createNavigation } from "../core/navigation.mjs?v=phase2-1";
-import { createAttendance } from "../features/attendance/controller.mjs?v=phase2-1";
-import { createHistory } from "../features/history/controller.mjs?v=phase2-1";
-import { createSpreadsheetImport } from "../features/import/controller.mjs?v=phase2-1";
-import { createAdmin } from "../features/admin/controller.mjs?v=phase2-1";
-import { createJourney } from "../features/journey/controller.mjs?v=phase2-1";
-import { createPeople } from "../features/people/controller.mjs?v=phase2-1";
-import { apiBase, demoHref } from "../connection.js?v=phase2-1";
+import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=perf-1";
+import { hours, createDateFormatters } from "../shared/formatters.mjs?v=perf-1";
+import { createRecordsTable } from "../shared/records-table.mjs?v=perf-1";
+import { createApplicationState } from "../core/state.mjs?v=perf-1";
+import { createClock } from "../core/clock.mjs?v=perf-1";
+import { createAPIClient } from "../core/api-client.mjs?v=perf-1";
+import { createAuthentication } from "../core/auth/controller.mjs?v=perf-1";
+import { createNavigation } from "../core/navigation.mjs?v=perf-1";
+import { createAttendance } from "../features/attendance/controller.mjs?v=perf-1";
+import { createHistory } from "../features/history/controller.mjs?v=perf-1";
+import { createSpreadsheetImport } from "../features/import/controller.mjs?v=perf-1";
+import { createAdmin } from "../features/admin/controller.mjs?v=perf-1";
+import { createJourney } from "../features/journey/controller.mjs?v=perf-1";
+import { createPeople } from "../features/people/controller.mjs?v=perf-1";
+import { apiBase, demoHref } from "../connection.js?v=perf-1";
 async function startApplication() {
   const isDemo = document.body.dataset.mode === "demo";
-  const demoClient = isDemo ? await import("../demo/api.mjs?v=phase2-1") : null;
+  const demoClient = isDemo ? await import("../demo/api.mjs?v=perf-1") : null;
   const state = createApplicationState();
   const clock = createClock(state);
   const { toast, showDataError } = createNotifications();
@@ -34,9 +34,10 @@ async function startApplication() {
   const navigation = createNavigation({ state, onView: loadView });
   const shared = { state, api, busy, toast, hours, ...clock, formatDate };
   const attendance = createAttendance({ ...shared, monthLabel, recordsTable, showDataError });
+  const refreshAttendance = () => state.view === "registro" ? attendance.loadHome() : Promise.resolve();
   const history = createHistory({ ...shared, download, recordsTable, showDataError });
-  const spreadsheet = createSpreadsheetImport({ ...shared, download, recordsTable, loadHome: attendance.loadHome, switchView: navigation.switchView });
-  const admin = createAdmin({ ...shared, onCorrection: attendance.loadHome });
+  const spreadsheet = createSpreadsheetImport({ ...shared, download, recordsTable, loadHome: refreshAttendance, switchView: navigation.switchView });
+  const admin = createAdmin({ ...shared, onCorrection: refreshAttendance });
   const journey = createJourney({ ...shared, getUser: () => state.session?.user });
   const people = createPeople({ ...shared, download, switchView: navigation.switchView });
   const authentication = createAuthentication({
@@ -93,7 +94,8 @@ async function startApplication() {
     $("#admin-nav").hidden = user.role !== "admin";
     $("#demo-banner").hidden = !user.demo;
     $("#mode-badge").hidden = !user.demo;
-    await people.initialize();
+    const context = await people.initialize();
+    if (!context || state.session?.user?.uid !== user.uid || state.signingOut) return;
     $("#footer-zone").textContent = state.timezone;
     $(".timezone-pill").textContent = state.timezone === "America/Sao_Paulo" ? "Horário de Brasília" : state.timezone;
     state.month = clock.currentMonth();
@@ -103,9 +105,8 @@ async function startApplication() {
     const allowed = ["registro", "espelho", "importar", "jornada", "ficha", "visao", ...(state.peopleContext?.canManagePeople ? ["pessoas", "gestao"] : []), ...user.role === "admin" ? ["admin"] : []];
     navigation.switchView(allowed.includes(requested) ? requested : "registro", false);
     attendance.updateClock();
-    await attendance.loadHome();
-    await journey.open();
-    if (state.view !== "registro" && state.view !== "jornada") await loadView(state.view);
+    journey.start();
+    await loadView(state.view);
   }
   function configureDemoCopy() {
     const selector = $("#demo-actor");
@@ -165,7 +166,7 @@ async function startApplication() {
   $("#retry-data").onclick = () => state.view === "espelho" ? history.loadHistory() : attendance.loadHome();
   document.addEventListener("visibilitychange", () => {
     if (document.hidden || !state.session?.user) return;
-    attendance.loadHome();
+    if (state.view === "registro") attendance.loadHome();
     if (state.view === "espelho") history.loadHistory();
   });
   setInterval(attendance.updateClock, 1e3);

@@ -1,11 +1,11 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=phase2-1';
-import { roleNames } from './presentation.mjs?v=phase2-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=phase2-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=perf-1';
+import { roleNames } from './presentation.mjs?v=perf-1';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=perf-1';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';
   let rows = [], nextOffset = null, filter = '', archived = false, people = [], departments = [], listOffset = null, search = '', department = '';
-  let generation = 0;
+  let generation = 0, identityEpoch = 0, initializing = null;
   const dateNow = () => { const parts = currentParts(); return `${parts.year}-${parts.month}-${parts.day}`; };
   const dialog = document.createElement('dialog');
   dialog.className = 'confirm-dialog people-dialog';
@@ -13,62 +13,96 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
   dialog.id = 'people-dialog';
   document.body.append(dialog);
   const profileRoot = () => $('#people-profile-content');
-  const fail = (root, message) => { root.innerHTML = `<p class="data-error" role="alert">${e(message)}</p><button class="button secondary" data-people-retry>Tentar novamente</button>`; root.querySelector('[data-people-retry]').onclick = () => open(state.view); };
+  const fail = (root, message) => { root.setAttribute('aria-busy', 'false'); root.innerHTML = `<p class="data-error" role="alert">${e(message)}</p><button class="button secondary" data-people-retry>Tentar novamente</button>`; root.querySelector('[data-people-retry]').onclick = () => open(state.view); };
+  const current = (token, view) => token === generation && state.view === view && Boolean(state.session?.user);
+  function loading(root, label, tabs = '') {
+    root.setAttribute('aria-busy', 'true');
+    root.innerHTML = `${tabs}<div class="empty-state" role="status">${e(label)}</div>`;
+  }
+  function bindTabs() {
+    $$('[data-people-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.peopleTab;run(loadProfile);});
+  }
   async function initialize() {
-    context = await api('people-context');
-    state.peopleContext = context;
-    $('#people-nav').hidden = !context.canManagePeople;
-    $('#user-role').textContent = `${state.session.user.demo ? 'Demo · ' : ''}${roleNames[context.role] || 'Colaborador'}`;
-    $('#management-nav').hidden = !context.canManagePeople;
-    return context;
+    if (!initializing) {
+      const epoch = identityEpoch;
+      const pending = api('people-context').then(result => {
+        if (epoch !== identityEpoch || !state.session?.user) return null;
+        context = result;
+        state.peopleContext = context;
+        $('#people-nav').hidden = !context.canManagePeople;
+        $('#user-role').textContent = `${state.session.user.demo ? 'Demo · ' : ''}${roleNames[context.role] || 'Colaborador'}`;
+        $('#management-nav').hidden = !context.canManagePeople;
+        return context;
+      }).finally(() => { if (initializing === pending) initializing = null; });
+      initializing = pending;
+    }
+    return initializing;
   }
   function reset() {
-    generation++;
-    context = null; profile = null; selectedUid = ''; rows = []; tab = 'history';
+    generation++; identityEpoch++; initializing = null;
+    context = null; profile = null; capabilities = {}; selectedUid = ''; rows = []; tab = 'history';
+    people = []; departments = []; nextOffset = listOffset = null; filter = search = department = ''; archived = false;
     state.peopleContext = null;
     $('#people-nav').hidden = true; $('#management-nav').hidden = true;
     dialog.close(); dialog.innerHTML = '';
-    for (const id of ['people-profile-content','people-list-content','people-dashboard-content']) $(`#${id}`).replaceChildren();
+    for (const id of ['people-profile-content','people-list-content','people-dashboard-content']) { const root = $(`#${id}`); root.replaceChildren(); root.setAttribute('aria-busy', 'false'); }
   }
   async function open(view) {
+    const token = ++generation;
     try {
       if (!context) await initialize();
+      if (!context || !current(token, view)) return;
       if (view === 'ficha') { selectedUid = state.session.user.uid; await loadProfile(); }
       if (view === 'pessoas') await loadList();
       if (view === 'gestao') await loadDashboard();
-    } catch (error) { fail($(view === 'pessoas' ? '#people-list-content' : view === 'gestao' ? '#people-dashboard-content' : '#people-profile-content'), error.message); }
+    } catch (error) { if (current(token, view)) fail($(view === 'pessoas' ? '#people-list-content' : view === 'gestao' ? '#people-dashboard-content' : '#people-profile-content'), error.message); }
   }
   async function selectPerson(uid) {
     selectedUid = uid; tab = 'history'; filter = ''; archived = false;
     switchView('ficha', false);
     window.scrollTo({top:0,behavior:'instant'});
-    try { await loadProfile(); } catch (error) { fail(profileRoot(), error.message); }
+    await loadProfile();
   }
   async function loadList(append = false) {
     const token = ++generation;
-    const result = await api('people-list', {query:`&q=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}&offset=${append ? listOffset || 0 : 0}`});
-    if (token !== generation) return;
-    people = append ? [...people, ...result.people] : result.people;
-    departments = result.departments; listOffset = result.nextOffset;
-    $('#people-list-content').innerHTML = listView({people,departments,query:search,department,nextOffset:listOffset});
+    const root = $('#people-list-content'), previousPeople = append ? [...people] : [];
+    const query = `&q=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}&offset=${append ? listOffset || 0 : 0}`;
+    loading(root, 'Carregando colaboradores…');
+    try {
+      const result = await api('people-list', {query});
+      if (!current(token, 'pessoas')) return;
+      people = [...previousPeople, ...result.people];
+      departments = result.departments; listOffset = result.nextOffset;
+      root.innerHTML = listView({people,departments,query:search,department,nextOffset:listOffset});
+      root.setAttribute('aria-busy', 'false');
     $('#people-list-filter').onsubmit = event => { event.preventDefault(); search = $('#people-search').value.trim(); department = $('#people-department-filter').value; run(loadList); };
     $$('[data-person]').forEach(button => button.onclick = () => selectPerson(button.dataset.person));
     $('[data-people-list-more]')?.addEventListener('click', () => run(() => loadList(true)));
+    } catch (error) { if (current(token, 'pessoas')) fail(root, error.message); }
   }
   async function loadProfile(append = false) {
     const token = ++generation;
-    const uid = selectedUid || state.session.user.uid;
-    const result = await api('people-profile', {query:`&uid=${encodeURIComponent(uid)}`});
-    const page = tab === 'data' ? null : await api(tab === 'documents' ? 'people-documents' : 'people-timeline', {query:`&uid=${encodeURIComponent(uid)}&type=${encodeURIComponent(filter)}&archived=${archived ? 1 : 0}&offset=${append ? nextOffset || 0 : 0}`});
-    if (token !== generation) return;
-    profile = result.profile; capabilities = result.capabilities;
-    rows = page ? append ? [...rows,...page.rows] : page.rows : []; nextOffset = page?.nextOffset ?? null;
-    profileRoot().innerHTML = profileView(profile,capabilities,tab,rows,{isSelf:uid===state.session.user.uid,actorUid:state.session.user.uid,today:dateNow(),filter,archived,nextOffset});
-    bindProfile();
+    const uid = selectedUid || state.session.user.uid, requestedTab = tab, requestedFilter = filter, requestedArchived = archived;
+    const offset = append ? nextOffset || 0 : 0, previousRows = append ? [...rows] : [], root = profileRoot();
+    const tabs = `<div class="people-tabs" role="tablist" aria-label="Ficha do colaborador">${[['history','Histórico'],['data','Dados'],['documents','Documentos']].map(([value,label])=>`<button role="tab" aria-selected="${requestedTab===value}" data-people-tab="${value}">${label}</button>`).join('')}</div>`;
+    loading(root, 'Carregando ficha…', tabs);
+    bindTabs();
+    try {
+      const [result, page] = await Promise.all([
+        api('people-profile', {query:`&uid=${encodeURIComponent(uid)}`}),
+        requestedTab === 'data' ? null : api(requestedTab === 'documents' ? 'people-documents' : 'people-timeline', {query:`&uid=${encodeURIComponent(uid)}&type=${encodeURIComponent(requestedFilter)}&archived=${requestedArchived ? 1 : 0}&offset=${offset}`})
+      ]);
+      if (!current(token, 'ficha')) return;
+      profile = result.profile; capabilities = result.capabilities;
+      rows = page ? [...previousRows,...page.rows] : []; nextOffset = page?.nextOffset ?? null;
+      root.innerHTML = profileView(profile,capabilities,requestedTab,rows,{isSelf:uid===state.session.user.uid,actorUid:state.session.user.uid,today:dateNow(),filter:requestedFilter,archived:requestedArchived,nextOffset});
+      root.setAttribute('aria-busy', 'false');
+      bindProfile();
+    } catch (error) { if (current(token, 'ficha')) fail(root, error.message); }
   }
   function bindProfile() {
     $('[data-people-back]')?.addEventListener('click',()=>switchView('pessoas'));
-    $$('[data-people-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.peopleTab;run(loadProfile);});
+    bindTabs();
     $('#people-event-filter')?.addEventListener('change',event=>{filter=event.target.value;run(loadProfile);});
     $('#people-archived')?.addEventListener('change',event=>{archived=event.target.checked;run(loadProfile);});
     $('[data-people-more]')?.addEventListener('click',()=>run(()=>loadProfile(true)));
@@ -155,7 +189,11 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     $('#people-confirm-form').onsubmit=event=>{event.preventDefault();formWork(event.target,'#people-dialog-error',async()=>{await api(kind==='event'?'people-event-archive':'people-document-archive',{method:'POST',data:{id,version:row.version,reason:$('#people-confirm-reason').value,requestId:crypto.randomUUID()}});dialog.close();toast('Item arquivado.');await loadProfile();});};
   }
   async function loadDashboard() {
+    const token = ++generation, root = $('#people-dashboard-content');
+    loading(root, 'Carregando indicadores…');
+    try {
     const result=await api('people-dashboard');
+    if (!current(token, 'gestao')) return;
     const counts={pendingAcknowledgements:result.pendingAcknowledgements?.count || 0,expiredDocuments:result.expiredDocuments?.count || 0,expiringDocuments:result.expiringDocuments?.count || 0,incompleteProfiles:Number(result.incompleteProfiles || 0)};
     const labels=[['pendingAcknowledgements','Ciências e comprovantes'],['expiredDocuments','Documentos vencidos'],['expiringDocuments','Vencem em até 30 dias'],['incompleteProfiles','Cadastros incompletos']];
     const items=['pendingAcknowledgements','expiredDocuments','expiringDocuments'].flatMap(kind=>(result[kind]?.rows || []).map(item=>({...item,kind})));
@@ -163,6 +201,8 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     const bindItems=()=>$$('[data-pending-person]').forEach(button=>button.onclick=()=>selectPerson(button.dataset.pendingPerson));bindItems();
     $('#people-dashboard-refresh').onclick=()=>run(loadDashboard);
     $$('[data-dashboard-filter]').forEach(button=>button.onclick=()=>{$$('[data-dashboard-filter]').forEach(item=>item.classList.toggle('active',item===button));const selected=items.filter(item=>item.kind===button.dataset.dashboardFilter);$('#people-dashboard-items').innerHTML=dashboardItems(selected);$('#people-dashboard-count').textContent=`${selected.length} ${selected.length===1?'item exibido':'itens exibidos'}`;bindItems();});
+    root.setAttribute('aria-busy', 'false');
+    } catch (error) { if (current(token, 'gestao')) fail(root, error.message); }
   }
   function dashboardItems(items){return items.length?`<div class="people-pending-list">${items.map(item=>`<button data-pending-person="${e(item.uid)}"><span><strong>${e(item.personName||item.name||item.employeeName||'Colaborador')}</strong><small>${e(item.title||item.label||'Cadastro incompleto')}</small></span><span class="status ${item.kind==='expiredDocuments'?'blocked':'pending'}">${e(item.detail||item.kindLabel||(item.acknowledgementMode==='proof'?'Comprovante pendente':null)||({pendingAcknowledgements:'Ciência pendente',expiredDocuments:'Vencido',expiringDocuments:'Vence em até 30 dias'}[item.kind])||'Revisar ficha')}</span></button>`).join('')}</div>`:'<div class="empty-state">Nenhuma pendência neste grupo.</div>';}
   function validateFile(file){if(!file)return;if(file.size>5*1024*1024)throw new Error('O arquivo deve ter no máximo 5 MB.');if(!/\.(pdf|png|jpe?g)$/i.test(file.name))throw new Error('Envie um arquivo PDF, PNG ou JPG.');}

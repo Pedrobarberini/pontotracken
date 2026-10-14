@@ -1,13 +1,14 @@
-import { createOvertimePresentation } from "./presentation.mjs?v=phase2-1";
-import { mountJourneyViews } from "./views.mjs?v=phase2-1";
-import { calendarBadge } from "../calendar/presentation.mjs?v=phase2-1";
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=phase2-1";
+import { createOvertimePresentation } from "./presentation.mjs?v=perf-1";
+import { mountJourneyViews } from "./views.mjs?v=perf-1";
+import { calendarBadge } from "../calendar/presentation.mjs?v=perf-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=perf-1";
 const activityNames = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const statusNames = { running: "Em andamento", pending: "Aguardando análise", approved: "Aprovada", rejected: "Recusada" };
 const when = (value) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(value));
 function createJourney({ api, busy, toast, hours, currentMonth, currentParts, getUser }) {
   const host = document.querySelector("#journey-tools"), teamHost = document.querySelector("#team-panel");
-  if (!host || !teamHost) return { open: async () => {
+  if (!host || !teamHost) return { start: async () => {
+  }, open: async () => {
   }, openAdmin: async () => {
   }, reset() {
   } };
@@ -15,7 +16,7 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
     const p = currentParts();
     return `${p.year}-${p.month}-${p.day}`;
   };
-  let active = null, ownRows = [], approvers = [], people = [], requests = [], teamOffset = 0, teamNext = null, reviewOffset = 0, reviewNext = null, epoch = 0, mineSequence = 0, heartbeat = null, refresh = null, selected = null, decision = null, closingRecord = null, assigningRecord = null, serverOffset = 0, enabled = false, pendingHeartbeat = false;
+  let active = null, ownRows = [], approvers = [], people = [], requests = [], teamOffset = 0, teamNext = null, reviewOffset = 0, reviewNext = null, epoch = 0, mineSequence = 0, teamSequence = 0, reviewSequence = 0, heartbeat = null, refresh = null, selected = null, decision = null, closingRecord = null, assigningRecord = null, serverOffset = 0, enabled = false, pendingHeartbeat = false;
   const mutationKeys = /* @__PURE__ */ new Map();
   mountJourneyViews({ host, teamHost, activityNames, statusNames });
   function fail(error, id = "journey-error") {
@@ -83,7 +84,7 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
     } catch (error) {
       if (activity) fail(error);
     } finally {
-      pendingHeartbeat = false;
+      if (generation === epoch) pendingHeartbeat = false;
     }
   }
   function mode() {
@@ -99,36 +100,36 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
     $("overtime-save").disabled = !approvers.length || !manual && Boolean(active);
   }
   async function team() {
-    const generation = epoch;
+    const generation = epoch, sequence = ++teamSequence, offset = teamOffset;
     try {
       const result = await api("admin-team", { query: `&month=${$("team-month").value}&q=${encodeURIComponent($("team-search").value)}&offset=${teamOffset}` });
-      if (generation !== epoch || !enabled) return;
+      if (generation !== epoch || sequence !== teamSequence || !enabled) return;
       people = result.users;
       teamNext = result.nextOffset;
       $("team-updated").textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(result.serverTime))}. Atualização a cada 30 segundos.`;
       const sums = people.reduce((a, p) => ({ late: a.late + p.metrics.lateMinutes, extra: a.extra + p.metrics.extraMinutes, approved: a.approved + (p.overtime.find((r) => r.status === "approved")?.minutes || 0), holiday: a.holiday + (p.metrics.holidayWorkedMinutes || 0), offSchedule: a.offSchedule + (p.metrics.offScheduleWorkedMinutes || 0), weekend: a.weekend + (p.metrics.weekendOffScheduleWorkedMinutes || 0) }), { late: 0, extra: 0, approved: 0, holiday: 0, offSchedule: 0, weekend: 0 });
       $("team-metrics").innerHTML = [["Colaboradores online", String(people.filter((p) => p.online).length)], ["Atrasos no mês", hours(sums.late)], ["Acima da jornada", hours(sums.extra)], ["Horas extras aprovadas", hours(sums.approved)], ["Trabalhadas em feriados", hours(sums.holiday)], ["Trabalhadas fora da escala", hours(sums.offSchedule)], ["FDS fora da escala", hours(sums.weekend)]].map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("");
       $("team-list").innerHTML = people.length ? `<div class="table-scroll"><table class="records-table team-table"><thead><tr><th>Colaborador</th><th>Atividade / conexão</th><th>Ponto de hoje</th><th>Horas no mês</th><th>Atraso</th><th>Acima da jornada</th><th>Jornada</th></tr></thead><tbody>${people.map((p) => `<tr><td><strong>${esc(p.name)}</strong><span class="admin-email">${esc(p.email)}</span>${p.status !== "active" ? `<span class="field-hint">${p.status === "pending" ? "Acesso pendente" : "Acesso bloqueado"}</span>` : ""}</td><td><strong>${esc(p.activityLabel)}</strong><span class="presence-state ${p.online ? "connected" : ""}">${p.online ? "Online" : "Sem conexão recente"}</span>${p.lastSeen ? `<small class="admin-email">Último contato ${esc(when(p.lastSeen))}</small>` : ""}</td><td>${p.today ? esc(p.today.times.join(" | ") || "Sem marcação") : "Sem marcação"}${calendarBadge(p.today ? { ...p.todayContext, ...p.today } : p.todayContext)}${p.today?.incomplete ? '<span class="status pending">Em aberto</span>' : ""}</td><td>${hours(p.metrics.minutes)}${p.metrics.incomplete ? `<span class="admin-email">${p.metrics.incomplete} ${p.metrics.incomplete === 1 ? "dia" : "dias"} em aberto</span>` : ""}</td><td>${p.metrics.scheduledDays ? hours(p.metrics.lateMinutes) : "—"}</td><td>${p.metrics.scheduledDays ? hours(p.metrics.extraMinutes) : "—"}</td><td><span class="admin-email">${p.schedule ? esc(p.schedule.start_time + " a " + p.schedule.end_time) : "Não configurada"}</span><button class="text-button" data-schedule-uid="${esc(p.uid)}">Configurar</button></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state">Nenhum colaborador encontrado.</div>';
-      $("team-prev").disabled = teamOffset === 0;
+      $("team-prev").disabled = offset === 0;
       $("team-next").disabled = teamNext === null;
-      $("team-page").textContent = `Página ${teamOffset / 50 + 1}`;
+      $("team-page").textContent = `Página ${offset / 50 + 1}`;
     } catch (error) {
-      fail(error, "team-error");
+      if (generation === epoch && sequence === teamSequence) fail(error, "team-error");
     }
   }
   async function reviews() {
-    const generation = epoch;
+    const generation = epoch, sequence = ++reviewSequence, offset = reviewOffset;
     try {
       const result = await api("admin-overtime", { query: `&month=${$("team-month").value}&status=${$("review-status").value}&offset=${reviewOffset}` });
-      if (generation !== epoch || !enabled) return;
+      if (generation !== epoch || sequence !== reviewSequence || !enabled) return;
       requests = result.rows;
       reviewNext = result.nextOffset;
       $("review-list").innerHTML = requests.length ? requests.map((r) => occurrence(r, true)).join("") : '<div class="empty-state">Nenhuma ocorrência para analisar neste período.</div>';
-      $("review-prev").disabled = reviewOffset === 0;
+      $("review-prev").disabled = offset === 0;
       $("review-next").disabled = reviewNext === null;
-      $("review-page").textContent = `Página ${reviewOffset / 50 + 1}`;
+      $("review-page").textContent = `Página ${offset / 50 + 1}`;
     } catch (error) {
-      fail(error, "team-error");
+      if (generation === epoch && sequence === reviewSequence) fail(error, "team-error");
     }
   }
   function editSchedule(uid) {
@@ -293,8 +294,7 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
       await busy($("schedule-save"), () => api("admin-schedule", { method: "POST", data: { uid: selected.uid, version: previous?.version || 0, effectiveDate: date, start: $("schedule-start").value, end: $("schedule-end").value, breakMinutes: Number($("schedule-break").value), toleranceMinutes: Number($("schedule-tolerance").value), weekdays: [...$("schedule-form").querySelectorAll("[name=weekday]:checked")].map((input) => Number(input.value)), reason: $("schedule-reason").value } }));
       $("schedule-dialog").close();
       toast("Jornada configurada.");
-      await team();
-      await mine();
+      await Promise.all([team(), mine()]);
     } catch (error) {
       toast(error.message, true);
     }
@@ -319,9 +319,7 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
       $("review-dialog").close();
       decision = null;
       toast("Análise registrada.");
-      await reviews();
-      await team();
-      await mine();
+      await Promise.all([reviews(), team(), mine()]);
     } catch (error) {
       fail(error, "review-error");
     }
@@ -340,26 +338,30 @@ function createJourney({ api, busy, toast, hours, currentMonth, currentParts, ge
   document.addEventListener("visibilitychange", () => {
     if (enabled && !document.hidden) {
       beat();
-      mine();
+      if (!$("view-jornada").hidden) mine();
       if (teamVisible()) openAdmin();
     }
   });
-  return { async open() {
+  function start() {
+    if (enabled) return;
     enabled = true;
     if (!$("overtime-month").value) $("overtime-month").value = currentMonth();
     $("overtime-date").value = today();
     $("overtime-date").max = today();
-    await mine();
-    await beat();
     if (!heartbeat) heartbeat = setInterval(() => {
       if (!document.hidden) beat();
     }, 6e4);
     if (!refresh) refresh = setInterval(() => {
       if (!document.hidden && teamVisible()) openAdmin();
     }, 3e4);
+    return beat();
+  }
+  return { start, async open() {
+    await Promise.all([start(), mine()]);
   }, openAdmin, reset() {
     enabled = false;
     epoch++;
+    pendingHeartbeat = false;
     active = null;
     ownRows = [];
     approvers = [];
