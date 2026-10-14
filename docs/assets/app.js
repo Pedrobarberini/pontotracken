@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=refactor-1";
+import { startApplication } from "./application/bootstrap.mjs?v=phase2-1";
 startApplication();

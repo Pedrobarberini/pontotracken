@@ -1,4 +1,4 @@
-import { $, $$ } from "../shared/dom.mjs?v=refactor-1";
+import { $, $$ } from "../shared/dom.mjs?v=phase2-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {
@@ -39,11 +39,12 @@ function createNavigation({ state, onView }) {
   });
   setMenu(false);
   function switchView(view, load = true) {
-    if (!["registro", "espelho", "importar", "jornada", "admin", "visao"].includes(view)) view = "registro";
+    if (!["registro", "espelho", "importar", "jornada", "admin", "visao", "ficha", "pessoas", "gestao"].includes(view)) view = "registro";
     if (view === "admin" && state.session?.user?.role !== "admin") view = "registro";
+    if (["pessoas", "gestao"].includes(view) && !state.peopleContext?.canManagePeople) view = "ficha";
     setMenu(false, $("#menu-toggle").getAttribute("aria-expanded") === "true");
     state.view = view;
-    const names = { registro: "Meu ponto", espelho: "Espelho de ponto", importar: "Importar planilha", jornada: "Status e horas extras", admin: "Administração", visao: "Visão do produto" };
+    const names = { registro: "Meu ponto", espelho: "Espelho de ponto", importar: "Importar planilha", jornada: "Status e horas extras", admin: "Administração", visao: "Visão do produto", ficha: "Ficha do colaborador", pessoas: "Colaboradores", gestao: "Início da gestão" };
     for (const el of $$(".view")) el.hidden = el.id !== `view-${view}`;
     for (const btn of $$("[data-view]")) {
       const active = btn.dataset.view === view;
@@ -52,7 +53,7 @@ function createNavigation({ state, onView }) {
       else btn.removeAttribute("aria-current");
     }
     $("#breadcrumb-view").textContent = names[view];
-    $("#breadcrumb-group").textContent = ["admin", "visao"].includes(view) ? "Empresa" : "Minha jornada";
+    $("#breadcrumb-group").textContent = ["ficha", "pessoas", "gestao"].includes(view) ? "Gestão de pessoas" : ["admin", "visao"].includes(view) ? "Empresa" : "Minha jornada";
     history.replaceState(null, "", `#${view}`);
     if (load) window.scrollTo({ top: 0, behavior: "instant" });
     if (load) onView(view);

@@ -1,6 +1,6 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=refactor-1";
-import { $, busy } from "../../shared/dom.mjs?v=refactor-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=refactor-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=phase2-1";
+import { $, busy } from "../../shared/dom.mjs?v=phase2-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=phase2-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
   const { firebaseAuth } = createFirebaseIdentity(state);
   function loginExchange() {

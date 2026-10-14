@@ -1,6 +1,7 @@
-import { journeyDemo } from "./journey.mjs?v=refactor-1";
-import { provenanceDemo } from "./provenance.mjs?v=refactor-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=refactor-1";
+import { journeyDemo } from "./journey.mjs?v=phase2-1";
+import { provenanceDemo } from "./provenance.mjs?v=phase2-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=phase2-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=phase2-1";
 const MONTHS = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, MAIO: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
 const LABELS = { recorded: "Registrado", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 let loggedIn = false, preview = null;
@@ -162,7 +163,7 @@ async function parseSpreadsheet(file, year) {
   return { rows, warnings, periods: columns.map((c) => ({ year: c.year, month: c.month })), header_row: header + 1, filename: file.name.slice(0, 180), id: crypto.randomUUID() };
 }
 async function demoApi(action, { data = null, query = "" } = {}) {
-  if (action === "session") return { user: loggedIn ? { uid: "presentation", name: "Visitante", email: "Demonstração", demo: true, role: "admin" } : null, csrf: "presentation-only", demoAllowed: true, firebaseReady: false, firebase: null, timezone: "America/Sao_Paulo", features: { registryPreparation: false } };
+  if (action === "session") return { user: loggedIn ? peopleDemo.sessionUser() : null, csrf: "presentation-only", demoAllowed: true, firebaseReady: false, firebase: null, timezone: "America/Sao_Paulo", features: { registryPreparation: false } };
   if (action === "demo") {
     loggedIn = true;
     seed();
@@ -171,8 +172,11 @@ async function demoApi(action, { data = null, query = "" } = {}) {
   }
   if (action === "login") error("O login Firebase ainda não está configurado nesta apresentação.", 503);
   if (!loggedIn) error("Abra a demonstração para continuar.", 401);
-  const context = { data: data || {}, query, dateNow, days, parseCell };
-  const users = () => journeyDemo("admin-users", { ...context, query: "" }).users;
+  if (action === "demo-persona") return {user:peopleDemo.select(data?.uid)};
+  if (action.startsWith("admin-") && peopleDemo.sessionUser().role !== "admin") error("Acesso restrito ao administrador.",403);
+  if (action.startsWith("people-")) return peopleDemo.request(action,{data:data||{},query});
+  const context = { data: data || {}, query, dateNow, days, parseCell, actorUid:peopleDemo.sessionUser().uid };
+  const users = () => journeyDemo("admin-users", { ...context, actorUid:"presentation", query: "" }).users;
   const registry = provenanceDemo(action, { ...context, ...["admin-registry", "admin-registry-save", "admin-record-provenance", "record-provenance"].includes(action) ? { users: users() } : {} });
   if (registry) return registry;
   const before = action === "admin-correct" ? structuredClone(days.get(data.date) || null) : null;
@@ -261,6 +265,11 @@ function saveBlob(blob, name) {
 async function demoDownload(url) {
   if (!loggedIn) error("Abra a demonstração para continuar.", 401);
   const params = new URL(url, location.href).searchParams;
+  if (params.get("action") === "people-file-download") {
+    const file = peopleDemo.download(params.get("id"));
+    saveBlob(file.blob,file.filename);
+    return;
+  }
   if (params.get("action") === "template") {
     const values = [["Dia", "SET", "OUT", "NOV", "DEZ", "JAN", "FEV", "MAR", "ABR", "MAIO", "JUN", "JUL", "AGO", "SET"]];
     for (let d = 1; d <= 31; d++) values.push([d]);
@@ -282,6 +291,7 @@ async function demoDownload(url) {
   error("Download indisponível.");
 }
 export {
+  demoActors,
   demoApi,
   demoDownload,
   minutes,

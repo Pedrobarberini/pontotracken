@@ -58,17 +58,32 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     }
     throw error;
   }
-  async function download(path) {
+  async function download(path, retried = false) {
     if (demoClient) return demoClient.demoDownload(path);
+    const requestCSRF = state.session?.csrf;
     const response = await fetch(requestURL(path), requestOptions());
     if (!response.ok) {
-      const result = await response.json();
-      throw new Error(result.error || "Não foi possível baixar o arquivo.");
+      let result = {};
+      try { result = await response.json(); } catch {}
+      let error = Object.assign(new Error(result.error || "Não foi possível baixar o arquivo."), { status: response.status });
+      if (response.status === 401 && state.session?.user) {
+        try {
+          const renewed = !retried && !state.signingOut && (state.session.csrf !== requestCSRF || await restoreSession());
+          if (renewed) return download(path, true);
+        } catch (restoreError) { error = restoreError; }
+        clearSessionToken();
+        state.session.user = null;
+        onSessionExpired();
+      }
+      throw error;
     }
     const href = URL.createObjectURL(await response.blob());
     const link = document.createElement("a");
     link.href = href;
-    link.download = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || "ponto.csv";
+    const disposition = response.headers.get("Content-Disposition") || "";
+    let filename = disposition.match(/filename="([^"]+)"/)?.[1];
+    try { filename = decodeURIComponent(disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1] || "") || filename; } catch {}
+    link.download = (filename || "arquivo").replace(/[\\/\x00-\x1f]/g, "_");
     link.click();
     setTimeout(() => URL.revokeObjectURL(href), 1e3);
   }
