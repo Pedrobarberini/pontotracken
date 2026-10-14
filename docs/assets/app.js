@@ -1,9 +1,9 @@
-import {createAdmin} from './admin.js?v=phase1-1';
-import {createJourney} from './journey.js?v=phase1-1';
+import {createAdmin} from './admin.js?v=phase1-2';
+import {createJourney} from './journey.js?v=phase1-2';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
-import {apiBase,demoHref} from './connection.js?v=phase1-1';
+import {apiBase,demoHref} from './connection.js?v=phase1-2';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=phase1-1'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=phase1-2'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;

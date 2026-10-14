@@ -1,8 +1,10 @@
+import {createRegistry} from './registry.js?v=phase1-2';
 const $=selector=>document.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={pending:'Aguardando aprovação',active:'Liberado',blocked:'Bloqueado',recorded:'Marcações de ponto',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 const recordText=row=>!row?'Sem registro':row.times?.length?row.times.join(' | '):labels[row.status]||'Sem marcações';
 export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,currentParts,onCorrection}){
+  const registry=createRegistry({api,busy,toast,formatDate});
   let team=[],choices=[],records=[],selected=null,tab='users',access=null,correction=null,usersOffset=0,historyOffset=0,usersNext=null,historyNext=null,epoch=0;
   const report=error=>{$('#admin-error').textContent=error.message;$('#admin-error').hidden=false;};
   const clearError=()=>$('#admin-error').hidden=true;
@@ -31,8 +33,13 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
     tab=next;clearError();
     for(const button of document.querySelectorAll('[data-admin-tab]')){button.classList.toggle('active',button.dataset.adminTab===next);button.setAttribute('aria-pressed',String(button.dataset.adminTab===next));}
     for(const panel of document.querySelectorAll('.admin-panel'))panel.hidden=panel.id!==`admin-panel-${next}`;
+    const teamPanel=$('#team-panel');if(teamPanel)teamPanel.hidden=next==='registry';
     if(next==='history')history();
     if(next==='records'&&$('#admin-employee').value)loadRecords();
+    if(next==='registry'){
+      registry.open();const tabs=$('#view-admin .admin-tabs'),rect=tabs.getBoundingClientRect(),header=$('.topbar')?.getBoundingClientRect().height||0;
+      if(rect.top<header+12||rect.bottom>window.innerHeight)window.scrollTo({top:Math.max(0,window.scrollY+rect.top-header-12),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+    }
   }
   async function loadRecords(){
     clearError();const uid=$('#admin-employee').value,generation=++epoch;
@@ -71,10 +78,10 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
       historyNext=result.nextOffset;
       $('#admin-history-list').innerHTML=result.events.length?result.events.map(event=>{
         const when=new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'medium',timeZone:'America/Sao_Paulo'}).format(new Date(event.created_at)),point=event.action==='record:correct';
-        const schedule=event.action==='schedule:configure',extra=event.action.startsWith('overtime:');
-        const describe=value=>!value?'Sem registro anterior':schedule?`${value.start_time} a ${value.end_time}, ${value.expected_minutes} min de jornada`:extra?[{pending:'Aguardando análise',approved:'Aprovada',rejected:'Recusada',running:'Em andamento'}[value.status]||value.status,value.requested_by&&`Solicitante: ${value.requested_by}`,value.requested_work&&`Solicitado: ${value.requested_work}`,value.performed_work&&`Realizado: ${value.performed_work}`,value.approver_uid&&`Responsável: ${value.approver_uid}`].filter(Boolean).join('\n'):point?recordText(value):labels[value.status];
+        const schedule=event.action==='schedule:configure',extra=event.action.startsWith('overtime:'),preparation=event.action==='registry:configure';
+        const describe=value=>!value?'Sem registro anterior':preparation?[`Versão ${value.version||0} · Liberação oficial pendente`,value.employerLegalName&&`Empregador: ${value.employerLegalName}`,value.employerCnpj&&`CNPJ: ${value.employerCnpj}`,value.softwareOwner&&`Titular: ${value.softwareOwner}`,value.technicalResponsible&&`Responsável técnico: ${value.technicalResponsible}`,value.legalResponsible&&`Responsável legal: ${value.legalResponsible}`,value.inpiRegistration&&`INPI informado: ${value.inpiRegistration}`,`Certificado: ${value.certificateDeclared?'declarado, não verificado':'não declarado'}`].filter(Boolean).join('\n'):schedule?`${value.start_time} a ${value.end_time}, ${value.expected_minutes} min de jornada`:extra?[{pending:'Aguardando análise',approved:'Aprovada',rejected:'Recusada',running:'Em andamento'}[value.status]||value.status,value.requested_by&&`Solicitante: ${value.requested_by}`,value.requested_work&&`Solicitado: ${value.requested_work}`,value.performed_work&&`Realizado: ${value.performed_work}`,value.approver_uid&&`Responsável: ${value.approver_uid}`].filter(Boolean).join('\n'):point?recordText(value):labels[value.status];
         const overtimeTitles={'overtime:register':'REGISTRO DE HORAS EXTRAS','overtime:start':'INÍCIO DO CRONÔMETRO','overtime:stop':'ENCERRAMENTO DO CRONÔMETRO','overtime:assign':'TROCA DE RESPONSÁVEL','overtime:approved':'HORAS EXTRAS APROVADAS','overtime:rejected':'HORAS EXTRAS RECUSADAS'};
-        const before=describe(event.before),after=describe(event.after),title=schedule?'CONFIGURAÇÃO DE JORNADA':extra?(overtimeTitles[event.action]||'ALTERAÇÃO DE HORAS EXTRAS'):point?'CORREÇÃO DE PONTO':'ALTERAÇÃO DE ACESSO';
+        const before=describe(event.before),after=describe(event.after),title=preparation?'DADOS DE IMPLANTAÇÃO':schedule?'CONFIGURAÇÃO DE JORNADA':extra?(overtimeTitles[event.action]||'ALTERAÇÃO DE HORAS EXTRAS'):point?'CORREÇÃO DE PONTO':'ALTERAÇÃO DE ACESSO';
         return `<article class="admin-event"><div class="admin-event-heading"><div><span class="eyebrow muted">${title}</span><h3>${esc(event.target_name)}${event.date?' · '+esc(formatDate(event.date)):''}</h3><span class="admin-email">${esc(event.target_email)}</span></div><time>${esc(when)}</time></div><div class="admin-comparison"><div><span>Antes</span><strong>${esc(before)}</strong></div><div><span>Depois</span><strong>${esc(after)}</strong></div></div><p class="admin-reason">${esc(event.reason)}</p><p class="admin-event-actor">Alterado por ${esc(event.actor_name)} · ${esc(event.actor_email)}</p></article>`;
       }).join(''):'<div class="history-card empty-state"><strong>Nenhuma alteração administrativa.</strong><span>As aprovações, bloqueios e correções aparecerão aqui.</span></div>';
       $('#admin-history-prev').disabled=historyOffset===0;$('#admin-history-next').disabled=historyNext===null;$('#admin-history-page').textContent=`Página ${historyOffset/50+1}`;
@@ -88,6 +95,8 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
   $('#admin-employee').onchange=loadRecords;$('#admin-month').onchange=loadRecords;
   $('#admin-records-table').onclick=event=>{const button=event.target.closest('[data-correct-date]');if(button)openCorrection(button.dataset.correctDate);};$('#admin-add-record').onclick=()=>openCorrection();
   $('#admin-correction-status').onchange=correctionPreview;$('#admin-correction-times').oninput=correctionPreview;
+  const provenanceButton=document.createElement('button');provenanceButton.type='button';provenanceButton.id='admin-correction-provenance';provenanceButton.className='button secondary';provenanceButton.textContent='Ver origem dos registros';
+  $('#admin-correction-before').insertAdjacentElement('afterend',provenanceButton);provenanceButton.onclick=()=>{if(selected)registry.openProvenance(selected,$('#admin-correction-date').value);};
   $('#admin-access-cancel').onclick=()=>$('#admin-access-dialog').close();$('#admin-correction-cancel').onclick=()=>$('#admin-correction-dialog').close();
   $('#admin-access-form').onsubmit=async event=>{
     event.preventDefault();if(!access)return;$('#admin-access-error').hidden=true;$('#admin-access-cancel').disabled=true;
@@ -102,5 +111,5 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
   };
   $('#admin-refresh-history').onclick=()=>{historyOffset=0;history();};$('#admin-history-employee').onchange=()=>{historyOffset=0;history();};
   $('#admin-history-prev').onclick=()=>{historyOffset=Math.max(0,historyOffset-50);history();};$('#admin-history-next').onclick=()=>{if(historyNext!==null){historyOffset=historyNext;history();}};
-  return {async open(){if(!$('#admin-month').value)$('#admin-month').value=currentMonth();await users();if(tab==='history')await history();},reset(){epoch++;team=[];choices=[];records=[];selected=null;access=null;correction=null;usersOffset=historyOffset=0;for(const id of ['admin-users-table','admin-records-table','admin-history-list'])$('#'+id).innerHTML='';chooseOptions([]);for(const id of ['admin-access-dialog','admin-correction-dialog'])$('#'+id).close();showTab('users');}};
+  return {async open(){if(!$('#admin-month').value)$('#admin-month').value=currentMonth();await users();if(tab==='history')await history();if(tab==='registry')await registry.open();},reset(){epoch++;team=[];choices=[];records=[];selected=null;access=null;correction=null;usersOffset=historyOffset=0;registry.reset();for(const id of ['admin-users-table','admin-records-table','admin-history-list'])$('#'+id).innerHTML='';chooseOptions([]);for(const id of ['admin-access-dialog','admin-correction-dialog'])$('#'+id).close();showTab('users');}};
 }

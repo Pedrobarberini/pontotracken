@@ -1,5 +1,6 @@
 /* Presentation simulator. No backend, Firebase, credentials, or production data. */
-import {journeyDemo} from './journey-demo.mjs?v=phase1-1';
+import {journeyDemo} from './journey-demo.mjs?v=phase1-2';
+import {registryDemo} from './registry-demo.mjs?v=phase1-2';
 const MONTHS = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,MAIO:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
 const LABELS = {recorded:'Registrado',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 let loggedIn=false, preview=null;
@@ -110,10 +111,24 @@ export async function parseSpreadsheet(file,year){
 }
 export async function demoApi(action,{data=null,query=''}={}){
   if(action==='session')return {user:loggedIn?{uid:'presentation',name:'Visitante',email:'Demonstração',demo:true,role:'admin'}:null,csrf:'presentation-only',demoAllowed:true,firebaseReady:false,firebase:null,timezone:'America/Sao_Paulo'};
-  if(action==='demo'){loggedIn=true;seed();return {ok:true,csrf:'presentation-only'};}
+  if(action==='demo'){loggedIn=true;seed();registryDemo.seed(days);return {ok:true,csrf:'presentation-only'};}
   if(action==='login')error('O login Firebase ainda não está configurado nesta apresentação.',503);
   if(!loggedIn)error('Abra a demonstração para continuar.',401);
-  const journey=journeyDemo(action,{data:data||{},query,dateNow,days,parseCell});if(journey)return journey;
+  const context={data:data||{},query,dateNow,days,parseCell};
+  const users=()=>journeyDemo('admin-users',{...context,query:''}).users;
+  const registry=registryDemo(action,{...context,...(['admin-registry','admin-registry-save','admin-record-provenance','record-provenance'].includes(action)?{users:users()}: {})});if(registry)return registry;
+  const before=action==='admin-correct'?structuredClone(days.get(data.date)||null):null;
+  if(action==='admin-history'){
+    const params=new URLSearchParams(query.replace(/^&/,'')),uid=params.get('uid'),offset=Number(params.get('offset')||0),team=users(),email=team.find(user=>user.uid===uid)?.email;
+    const history=[];
+    for(let start=0;start<=10000;start+=50){const pageParams=new URLSearchParams(params);pageParams.set('offset',String(start));const page=journeyDemo(action,{...context,query:'&'+pageParams});history.push(...page.events);if(page.events.length<50)break;}
+    const all=[...history,...registryDemo.audit()].filter(event=>!uid||event.target_email===email).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
+    return {events:all.slice(offset,offset+50),nextOffset:all.length>offset+50?offset+50:null};
+  }
+  const journey=journeyDemo(action,context);if(journey){
+    if(action==='admin-correct')registryDemo.observeCorrection({uid:data.uid,date:data.date,before,after:journey.record,reason:data.reason,users:users()});
+    return journey;
+  }
   if(action==='logout'){loggedIn=false;preview=null;return {ok:true};}
   if(action==='records'){
     const params=new URLSearchParams(query.replace(/^&/,'')),month=params.get('month')||dateNow().slice(0,7),status=params.get('status')||'';
@@ -133,7 +148,7 @@ export async function demoApi(action,{data=null,query=''}={}){
       const next=seconds(row.times.at(-1))+1;if(next>=86400)error('O dia terminou. Atualize a página.',409);
       time=[Math.floor(next/3600),Math.floor(next%3600/60),next%60].map(n=>String(n).padStart(2,'0')).join(':');
     }
-    const saved={...row,times:[...row.times,time]};days.set(date,saved);requests.set(data.requestId,saved);
+    const saved={...row,times:[...row.times,time]};days.set(date,saved);requests.set(data.requestId,saved);await registryDemo.observePunch({record:saved,type:data.type,requestId:data.requestId});
     return {record:decorate(saved)};
   }
   if(action==='import-preview'){
@@ -141,8 +156,9 @@ export async function demoApi(action,{data=null,query=''}={}){
   }
   if(action==='import-commit'){
     if(!preview||preview.id!==data.id||preview.expires<Date.now())error('A prévia expirou. Selecione a planilha novamente.',409);
-    let saved=0,skipped=0;
-    for(const row of preview.rows){if(days.has(row.date)){skipped++;continue;}days.set(row.date,{date:row.date,status:row.status,times:[...row.times],source:'import'});saved++;}
+    let saved=0,skipped=0;const imported=[];
+    for(const row of preview.rows){if(days.has(row.date)){skipped++;continue;}const record={date:row.date,status:row.status,times:[...row.times],source:'import'};days.set(row.date,record);imported.push(record);saved++;}
+    registryDemo.observeImport({rows:imported,filename:preview.filename});
     preview=null;return {saved,skipped};
   }
   error('Ação indisponível na demonstração.',404);
