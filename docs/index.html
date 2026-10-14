@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#68b42e"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=palette-1">
-  <script type="module" src="assets/app.js?v=phase1-2"></script>
+  <link rel="stylesheet" href="assets/style.css?v=calendar-1">
+  <script type="module" src="assets/app.js?v=calendar-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p class="boot-copy">Carregando seu ponto…</p></div>
@@ -67,7 +67,7 @@
       <section id="view-registro" class="view">
         <div class="page-heading"><div><span class="eyebrow muted">UM DIA DE CADA VEZ</span><h1>Meu ponto<span>.</span></h1><p>Acompanhe sua jornada e registre suas marcações.</p></div><button class="button secondary" data-open-import><svg class="icon"><use href="assets/icons.svg#upload"/></svg>Importar Excel</button></div>
         <div class="today-grid">
-          <section class="punch-card" aria-labelledby="punch-title"><div class="punch-top"><span id="punch-title">REGISTRO DE HOJE</span><span class="timezone-pill">Horário de Brasília</span></div><div id="live-clock" class="live-clock">00:00<span>:00</span></div><p id="today-date" class="today-date"></p><div class="punch-bottom"><div><span class="punch-state" id="punch-state">Jornada não iniciada</span><p id="punch-hint">Tudo pronto para começar seu dia.</p></div><button id="punch" class="button punch-button"><svg class="icon"><use href="assets/icons.svg#fingerprint"/></svg><span>Registrar entrada</span></button></div></section>
+          <section class="punch-card" aria-labelledby="punch-title"><div class="punch-top"><span id="punch-title">REGISTRO DE HOJE</span><span class="timezone-pill">Horário de Brasília</span></div><div id="live-clock" class="live-clock">00:00<span>:00</span></div><p id="today-date" class="today-date"></p><p id="punch-calendar-note" class="calendar-note" role="status" hidden></p><div class="punch-bottom"><div><span class="punch-state" id="punch-state">Jornada não iniciada</span><p id="punch-hint">Tudo pronto para começar seu dia.</p></div><button id="punch" class="button punch-button"><svg class="icon"><use href="assets/icons.svg#fingerprint"/></svg><span>Registrar entrada</span></button></div></section>
           <section class="timeline-card"><div class="card-heading"><h2>Marcações de hoje</h2><svg class="icon muted"><use href="assets/icons.svg#clock"/></svg></div><div id="today-timeline" class="timeline"></div><div class="today-total"><span>Horas registradas</span><strong id="today-total">00h 00m</strong></div></section>
         </div>
         <div class="section-title"><h2>Seu mês até aqui</h2><span id="summary-month"></span></div>
@@ -82,9 +82,9 @@
       </section>
       <section id="view-espelho" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">SEU HISTÓRICO</span><h1>Espelho de ponto<span>.</span></h1><p>Confira os horários e as ocorrências de cada dia.</p></div><button id="export" class="button secondary"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Exportar CSV</button></div>
-        <div class="month-toolbar"><div class="month-picker"><button id="prev-month" class="icon-button" aria-label="Mês anterior"><svg class="icon"><use href="assets/icons.svg#chevron-left"/></svg></button><label class="sr-only" for="history-month">Mês do espelho</label><input id="history-month" type="month"><button id="next-month" class="icon-button" aria-label="Próximo mês"><svg class="icon"><use href="assets/icons.svg#chevron-right"/></svg></button></div><div class="history-filter"><label for="history-status">Situação</label><select id="history-status"><option value="">Todos</option><option value="recorded">Registrado</option><option value="weekend">Fim de semana (FDS)</option><option value="medical">Atestado</option><option value="not_applicable">N/A · Não se aplica</option></select></div><span id="history-summary" role="status" aria-live="polite"></span></div>
-        <div id="history-table" class="history-card"></div>
-        <p class="footnote">As ocorrências FDS, N/A e ATESTADO não somam horas. Dias em branco na planilha não viram faltas.</p>
+        <div class="month-toolbar"><div class="month-picker"><button id="prev-month" class="icon-button" aria-label="Mês anterior"><svg class="icon"><use href="assets/icons.svg#chevron-left"/></svg></button><label class="sr-only" for="history-month">Mês do espelho</label><input id="history-month" type="month"><button id="next-month" class="icon-button" aria-label="Próximo mês"><svg class="icon"><use href="assets/icons.svg#chevron-right"/></svg></button></div><div class="history-filter"><label for="history-status">Situação</label><select id="history-status"><option value="">Todos</option><option value="recorded">Registrado</option><option value="weekend">FDS fora da escala</option><option value="holiday">Feriado nacional</option><option value="off_schedule">Fora da escala</option><option value="medical">Atestado</option><option value="not_applicable">N/A · Não se aplica</option></select></div><span id="history-summary" role="status" aria-live="polite"></span></div>
+        <div id="history-calendar-summary" class="calendar-summary" aria-live="polite"></div><div id="history-table" class="history-card"></div>
+        <p class="footnote">As horas são somadas pelas marcações, inclusive em feriados e dias fora da escala. O calendário não cria batidas nem transforma dias em branco em faltas.</p>
       </section>
       <section id="view-importar" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">DO EXCEL PARA O SEU PONTO</span><h1>Importar planilha<span>.</span></h1><p>Traga as marcações do seu modelo e confira antes de salvar.</p></div><button id="template" class="button secondary"><svg class="icon"><use href="assets/icons.svg#download"/></svg>Baixar modelo</button></div>
@@ -96,10 +96,10 @@
       <section id="view-jornada" class="view" hidden><div class="page-heading"><div><span class="eyebrow muted">MINHA JORNADA</span><h1>Status e horas extras<span>.</span></h1><p>Acompanhe sua atividade e registre os períodos adicionais.</p></div></div><div id="journey-tools"></div></section>
       <section id="view-admin" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">GESTÃO DA EMPRESA</span><h1>Administração<span>.</span></h1><p>Gerencie o acesso da equipe e mantenha os registros em dia.</p></div><span class="admin-badge">Acesso ADMIN</span></div>
-        <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="users" class="active" aria-pressed="true">Funcionários</button><button data-admin-tab="records" aria-pressed="false">Ajustar ponto</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
+        <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="team" class="active" aria-pressed="true">Visão da equipe</button><button data-admin-tab="users" aria-pressed="false">Funcionários</button><button data-admin-tab="records" aria-pressed="false">Ajustar ponto</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
         <div id="team-panel"></div>
         <div id="admin-error" class="data-error" role="alert" hidden></div>
-        <section id="admin-panel-users" class="admin-panel">
+        <section id="admin-panel-users" class="admin-panel" hidden>
           <div class="admin-counts"><div><span>Aguardando aprovação</span><strong id="admin-count-pending">0</strong></div><div><span>Acesso liberado</span><strong id="admin-count-active">0</strong></div><div><span>Bloqueados</span><strong id="admin-count-blocked">0</strong></div></div>
           <form id="admin-users-filter" class="admin-toolbar"><div class="admin-field grow"><label for="admin-search">Buscar funcionário</label><input id="admin-search" type="search" placeholder="Nome ou e-mail" maxlength="180"></div><div class="admin-field"><label for="admin-status">Situação do acesso</label><select id="admin-status"><option value="">Todas</option><option value="pending">Aguardando aprovação</option><option value="active">Liberado</option><option value="blocked">Bloqueado</option></select></div><button class="button secondary" type="submit">Buscar</button></form>
           <div class="history-card" id="admin-users-table"></div><div class="admin-pagination"><button id="admin-users-prev" class="button secondary" disabled>Anterior</button><span id="admin-users-page"></span><button id="admin-users-next" class="button secondary" disabled>Próxima</button></div>

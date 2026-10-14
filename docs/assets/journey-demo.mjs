@@ -1,3 +1,4 @@
+import {calendarContext,enrichCalendar,projectMonth,calendarSummary} from './calendar.mjs?v=calendar-1';
 const labels={available:'Disponível',lunch:'Almoço',break:'Pausa rápida',meeting:'Reunião',external:'Externo',offline:'Offline'};
 const baseSchedule={start_time:'09:00',end_time:'16:00',break_minutes:0,expected_minutes:420,tolerance_minutes:5,weekdays:'[1,2,3,4,5]',version:1,effective_date:'2020-01-01'};
 export function createJourneyDemo({clock=()=>new Date()}={}){
@@ -7,6 +8,8 @@ const schedules=new Map(users.map(u=>[u.uid,[{...baseSchedule,uid:u.uid}]]));
 const presence=new Map(users.map((u,i)=>[u.uid,{uid:u.uid,activity:['available','meeting','lunch','offline'][i]||'available',last_seen:now(),changed_at:now()}]));
 const overtime=[],events=[];let seeded=false;
 const mutations=new Map();
+const seconds=time=>{const [hour,minute,second=0]=time.split(':').map(Number);return hour*3600+minute*60+second;};
+const decorateDay=row=>({...row,version:row.version||1,minutes:Math.floor(row.times.reduce((sum,time,index)=>index%2?sum+seconds(time)-seconds(row.times[index-1]):sum,0)/60),incomplete:row.times.length%2===1,label:row.times.length%2?'Em aberto':{recorded:'Registrado',weekend:'Fim de semana',medical:'Atestado',not_applicable:'Não se aplica'}[row.status]});
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
 const text=(value,min,max,label)=>{if(typeof value!=='string'||value.trim().length<min||value.trim().length>max)fail(label);return value.trim();};
 const eligible=(actorUid,uid)=>users.find(user=>user.uid===uid&&user.uid!==actorUid&&user.role==='admin'&&user.status==='active');
@@ -25,6 +28,7 @@ return function journeyDemo(action,{data={},query='',dateNow,days,parseCell,acto
   if(!actor||actor.status!=='active')fail('Conta demonstrativa indisponível.',403);
   if(action.startsWith('admin-')&&actor.role!=='admin')fail('Acesso restrito ao administrador.',403);
   const params=new URLSearchParams(query.replace(/^&/,'')),month=params.get('month')||dateNow().slice(0,7),offset=Number(params.get('offset')||0);
+  if(action==='demo-calendar')return {schedules:schedules.get(actorUid)||[]};
   let mutationKey=null,signature=null;
   if((action.startsWith('overtime-')||action==='admin-overtime-review')&&data.requestId!==undefined){
     if(typeof data.requestId!=='string'||!/^[A-Za-z0-9-]{16,64}$/.test(data.requestId))fail('Identificador de envio inválido.');
@@ -73,7 +77,7 @@ return function journeyDemo(action,{data={},query='',dateNow,days,parseCell,acto
   }
   if(action==='admin-team'){
     const q=(params.get('q')||'').toLowerCase(),matches=users.filter(u=>(u.name+' '+u.email).toLowerCase().includes(q));
-    return {users:matches.slice(offset,offset+50).map((u,i)=>{const p=presence.get(u.uid),own=schedules.get(u.uid),approved=overtime.filter(r=>r.uid===u.uid&&r.work_date.startsWith(month));return {...u,activity:p.activity,activityLabel:labels[p.activity],online:u.status==='active'&&p.activity!=='offline',lastSeen:p.last_seen,schedule:own.at(-1),schedules:own,today:u.uid==='presentation'?(days.get(dateNow())||null):u.status==='active'?{date:dateNow(),times:[u.uid==='bruno'?'09:12':'09:00'],incomplete:true,label:'Em aberto'}:null,metrics:{minutes:u.uid==='presentation'?[...days.values()].filter(r=>r.date.startsWith(month)).reduce((s,r)=>{for(let j=0;j+1<r.times.length;j+=2)s+=(Number(r.times[j+1].slice(0,2))*60+Number(r.times[j+1].slice(3,5)))-(Number(r.times[j].slice(0,2))*60+Number(r.times[j].slice(3,5)));return s;},0):u.status==='active'?2100:0,lateMinutes:u.uid==='bruno'?12:0,extraMinutes:u.uid==='ana'?75:0,incomplete:u.uid==='presentation'?[...days.values()].filter(r=>r.date.startsWith(month)&&r.status==='recorded'&&r.times.length%2===1).length:u.status==='active'?1:0,scheduledDays:u.status==='active'?5:0},overtime:['pending','approved','rejected','running'].map(status=>({status,minutes:approved.filter(r=>r.status===status).reduce((s,r)=>s+decorate(r).minutes,0)}))};}),nextOffset:null,serverTime:now()};
+    return {users:matches.slice(offset,offset+50).map((u,i)=>{const p=presence.get(u.uid),own=schedules.get(u.uid),approved=overtime.filter(r=>r.uid===u.uid&&r.work_date.startsWith(month)),calendar=calendarSummary(projectMonth(u.uid==='presentation'?[...days.values()].map(decorateDay):[],month,own,dateNow())),current=u.uid==='presentation'?(days.get(dateNow())||null):u.status==='active'?{date:dateNow(),status:'recorded',times:[u.uid==='bruno'?'09:12':'09:00'],source:'demo',incomplete:true,label:'Em aberto'}:null;return {...u,activity:p.activity,activityLabel:labels[p.activity],online:u.status==='active'&&p.activity!=='offline',lastSeen:p.last_seen,schedule:own.at(-1),schedules:own,today:current?enrichCalendar(decorateDay(current),own):null,todayContext:calendarContext(dateNow(),own),metrics:{holidayWorkedMinutes:calendar.holidayWorkedMinutes,offScheduleWorkedMinutes:calendar.offScheduleWorkedMinutes,weekendOffScheduleWorkedMinutes:calendar.weekendOffScheduleWorkedMinutes,minutes:u.uid==='presentation'?[...days.values()].filter(r=>r.date.startsWith(month)).reduce((s,r)=>{for(let j=0;j+1<r.times.length;j+=2)s+=(Number(r.times[j+1].slice(0,2))*60+Number(r.times[j+1].slice(3,5)))-(Number(r.times[j].slice(0,2))*60+Number(r.times[j].slice(3,5)));return s;},0):u.status==='active'?2100:0,lateMinutes:u.uid==='bruno'?12:0,extraMinutes:u.uid==='ana'?75:0,incomplete:u.uid==='presentation'?[...days.values()].filter(r=>r.date.startsWith(month)&&r.status==='recorded'&&r.times.length%2===1).length:u.status==='active'?1:0,scheduledDays:u.status==='active'?5:0},overtime:['pending','approved','rejected','running'].map(status=>({status,minutes:approved.filter(r=>r.status===status).reduce((s,r)=>s+decorate(r).minutes,0)}))};}),nextOffset:null,serverTime:now()};
   }
   if(action==='admin-schedule'){const own=schedules.get(data.uid),before=own.find(s=>s.effective_date===data.effectiveDate);if((before?.version||0)!==data.version)fail('Atualize a jornada.',409);const total=(Number(data.end.slice(0,2))*60+Number(data.end.slice(3)))-(Number(data.start.slice(0,2))*60+Number(data.start.slice(3)))-data.breakMinutes;if(total<=0)fail('Confira o intervalo da jornada.');const after={uid:data.uid,effective_date:data.effectiveDate,start_time:data.start,end_time:data.end,break_minutes:data.breakMinutes,expected_minutes:total,tolerance_minutes:data.toleranceMinutes,weekdays:JSON.stringify(data.weekdays),version:data.version+1};if(before)Object.assign(before,after);else own.push(after);own.sort((a,b)=>a.effective_date.localeCompare(b.effective_date));events.unshift({id:crypto.randomUUID(),action:'schedule:configure',target_name:users.find(u=>u.uid===data.uid).name,target_email:'exemplo',actor_name:'Visitante',actor_email:'Demonstração',date:data.effectiveDate,reason:data.reason,before,after,created_at:now()});return {schedule:after};}
   if(action==='admin-overtime'){const rows=overtime.filter(row=>(row.work_date.startsWith(month)||row.status==='running')&&(!params.get('status')||row.status===params.get('status'))).map(row=>({...decorate(row,actorUid),name:users.find(user=>user.uid===row.uid).name}));return {rows:rows.slice(offset,offset+50),nextOffset:rows.length>offset+50?offset+50:null};}
@@ -88,8 +92,17 @@ return function journeyDemo(action,{data={},query='',dateNow,days,parseCell,acto
   }
   if(action==='admin-users'){const q=(params.get('q')||'').toLowerCase(),rows=users.filter(u=>(u.name+' '+u.email).toLowerCase().includes(q)&&(!params.get('status')||u.status===params.get('status')));return {users:rows.slice(offset,offset+50),counts:Object.fromEntries(['active','pending','blocked'].map(s=>[s,users.filter(u=>u.status===s).length])),nextOffset:null};}
   if(action==='admin-access'){const user=users.find(u=>u.uid===data.uid);if(!user||user.role==='admin'||user.version!==data.version)fail('Acesso protegido ou desatualizado.',409);user.status=data.status;user.version++;return {user};}
-  if(action==='admin-records')return {user:users.find(u=>u.uid===params.get('uid')),rows:[...days.values()].filter(r=>r.date.startsWith(month)).map(r=>({...r,version:r.version||1,minutes:420,label:r.status==='recorded'?'Registrado':'Fim de semana',incomplete:false}))};
-  if(action==='admin-correct'){const parsed=data.status==='recorded'?parseCell(data.times.join(' | ')):{status:data.status,times:[]};const record={...parsed,date:data.date,source:'admin',version:data.version+1};if(data.uid==='presentation')days.set(data.date,record);return {record};}
+  if(action==='admin-records'){
+    const uid=params.get('uid'),user=users.find(u=>u.uid===uid);if(!user)fail('Funcionário não encontrado.',404);
+    const rows=projectMonth([...days.values()].filter(row=>row.date.startsWith(month)).map(decorateDay),month,schedules.get(uid)||[],dateNow());
+    return {user,rows,summary:calendarSummary(rows)};
+  }
+  if(action==='admin-correct'){
+    const before=data.uid==='presentation'?days.get(data.date):null;
+    if(data.uid==='presentation'&&(before?.version??(before?1:0))!==data.version)fail('O registro mudou. Atualize o ponto antes de salvar.',409);
+    const parsed=data.status==='recorded'?parseCell(data.times.join(' | ')):{status:data.status,times:[]};
+    const record={...parsed,date:data.date,source:'admin',version:data.version+1};if(data.uid==='presentation')days.set(data.date,record);return {record};
+  }
   if(action==='admin-history')return {events:events.filter(event=>event.action!=='overtime:assign').slice(offset,offset+50),nextOffset:null};
   return null;
 };

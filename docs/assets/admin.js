@@ -1,11 +1,12 @@
 import {createRegistry} from './registry.js?v=phase1-2';
+import {recordStatus,sourceLabel,calendarTotals} from './calendar-ui.mjs?v=calendar-1';
 const $=selector=>document.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={pending:'Aguardando aprovação',active:'Liberado',blocked:'Bloqueado',recorded:'Marcações de ponto',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 const recordText=row=>!row?'Sem registro':row.times?.length?row.times.join(' | '):labels[row.status]||'Sem marcações';
 export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,currentParts,onCorrection}){
   const registry=createRegistry({api,busy,toast,formatDate});
-  let team=[],choices=[],records=[],selected=null,tab='users',access=null,correction=null,usersOffset=0,historyOffset=0,usersNext=null,historyNext=null,epoch=0;
+  let team=[],choices=[],records=[],selected=null,tab='team',access=null,correction=null,usersOffset=0,historyOffset=0,usersNext=null,historyNext=null,epoch=0;
   const report=error=>{$('#admin-error').textContent=error.message;$('#admin-error').hidden=false;};
   const clearError=()=>$('#admin-error').hidden=true;
   const today=()=>{const p=currentParts();return `${p.year}-${p.month}-${p.day}`;};
@@ -29,17 +30,24 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
       chooseOptions(team);
     }catch(error){report(error);$('#admin-users-table').innerHTML='<div class="empty-state">Não foi possível carregar a equipe. Use Buscar para tentar novamente.</div>';}
   }
-  function showTab(next){
+  async function showTab(next,{load=true,scroll=true,notify=true}={}){
+    if(!['team','users','records','history','registry'].includes(next))next='team';
     tab=next;clearError();
-    for(const button of document.querySelectorAll('[data-admin-tab]')){button.classList.toggle('active',button.dataset.adminTab===next);button.setAttribute('aria-pressed',String(button.dataset.adminTab===next));}
+    for(const button of document.querySelectorAll('[data-admin-tab]')){button.classList.toggle('active',button.dataset.adminTab===next);button.setAttribute('aria-pressed',String(button.dataset.adminTab===next));button.setAttribute('aria-controls',button.dataset.adminTab==='team'?'team-panel':`admin-panel-${button.dataset.adminTab}`);}
     for(const panel of document.querySelectorAll('.admin-panel'))panel.hidden=panel.id!==`admin-panel-${next}`;
-    const teamPanel=$('#team-panel');if(teamPanel)teamPanel.hidden=next==='registry';
-    if(next==='history')history();
-    if(next==='records'&&$('#admin-employee').value)loadRecords();
-    if(next==='registry'){
-      registry.open();const tabs=$('#view-admin .admin-tabs'),rect=tabs.getBoundingClientRect(),header=$('.topbar')?.getBoundingClientRect().height||0;
+    const teamPanel=$('#team-panel');if(teamPanel)teamPanel.hidden=next!=='team';
+    if(notify)document.dispatchEvent(new CustomEvent('ponto:admin-tab',{detail:{tab:next}}));
+    if(scroll){
+      const tabs=$('#view-admin .admin-tabs'),rect=tabs.getBoundingClientRect(),header=$('.topbar')?.getBoundingClientRect().height||0;
       if(rect.top<header+12||rect.bottom>window.innerHeight)window.scrollTo({top:Math.max(0,window.scrollY+rect.top-header-12),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
     }
+    if(!load)return;
+    if(next==='users')await users();
+    if(['records','history'].includes(next)&&!choices.length)await users();
+    if(tab!==next)return;
+    if(next==='history')await history();
+    if(next==='records'&&$('#admin-employee').value)await loadRecords();
+    if(next==='registry')await registry.open();
   }
   async function loadRecords(){
     clearError();const uid=$('#admin-employee').value,generation=++epoch;
@@ -49,8 +57,8 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
     try{
       const result=await api('admin-records',{query:`&uid=${encodeURIComponent(uid)}&month=${$('#admin-month').value}`});if(generation!==epoch)return;
       selected=result.user;records=result.rows;$('#admin-add-record').disabled=false;
-      $('#admin-record-summary').textContent=`${selected.name} · ${records.length} dias no mês · ${hours(records.reduce((n,row)=>n+row.minutes,0))}`;
-      $('#admin-records-table').innerHTML=records.length?`<div class="table-scroll"><table class="records-table"><thead><tr><th>Data</th><th>Marcações / ocorrência</th><th>Horas</th><th>Origem</th><th>Ajuste</th></tr></thead><tbody>${records.map(row=>`<tr><td>${esc(formatDate(row.date))}</td><td class="times">${esc(recordText(row))}${row.incomplete?'<span class="admin-email">Saída em aberto</span>':''}</td><td>${row.times.length?hours(row.minutes):'—'}</td><td><span class="source-label">${{admin:'Ajuste ADMIN',import:'Planilha',live:'Site'}[row.source]||'Site'}</span></td><td><button class="text-button" data-correct-date="${row.date}">Corrigir</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><strong>Nenhum registro neste mês.</strong><span>Use Adicionar dia para registrar um ponto ausente, com justificativa.</span></div>';
+      $('#admin-record-summary').textContent=`${selected.name} · ${records.filter(row=>row.times.length).length} dias com ponto · ${hours(records.reduce((n,row)=>n+row.minutes,0))}`;
+      $('#admin-records-table').innerHTML=records.length?`<div class="table-scroll"><table class="records-table"><thead><tr><th>Data</th><th>Marcações / ocorrência</th><th>Horas</th><th>Origem</th><th>Ajuste</th></tr></thead><tbody>${records.map(row=>`<tr><td>${esc(formatDate(row.date))}${recordStatus(row)}</td><td class="times">${row.times.length?esc(recordText(row)):'—'}${row.incomplete?'<span class="admin-email">Saída em aberto</span>':''}</td><td>${row.times.length?hours(row.minutes):'—'}</td><td><span class="source-label">${sourceLabel(row)}</span></td><td><button class="text-button" data-correct-date="${row.date}">${row.virtual?'Adicionar marcação':'Corrigir'}</button></td></tr>`).join('')}</tbody></table></div>${result.summary?`<div class="calendar-summary">${calendarTotals(result.summary,hours)}</div>`:''}`:'<div class="empty-state"><strong>Nenhum registro neste mês.</strong><span>Use Adicionar dia para registrar um ponto ausente, com justificativa.</span></div>';
     }catch(error){report(error);$('#admin-records-table').innerHTML='<div class="empty-state">Não foi possível carregar o ponto. Selecione novamente o funcionário.</div>';}
   }
   function openAccess(uid,status){
@@ -66,10 +74,11 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
   }
   function openCorrection(date){
     if(!selected)return;const row=records.find(r=>r.date===date);
-    correction={uid:selected.uid,version:row?.version||0};$('#admin-correction-form').reset();$('#admin-correction-title').textContent=row?'Ajustar registro':'Adicionar dia ausente';
-    $('#admin-correction-person').textContent=`${selected.name} · ${selected.email}`;$('#admin-correction-before').textContent=recordText(row);
-    $('#admin-correction-date').value=date||($('#admin-month').value===currentMonth()?today():$('#admin-month').value+'-01');$('#admin-correction-date').readOnly=Boolean(row);$('#admin-correction-date').max=today();
-    $('#admin-correction-status').value=row?.status||'recorded';$('#admin-correction-times').value=row?.times.join(' | ')||'';$('#admin-correction-error').hidden=true;correctionPreview();$('#admin-correction-dialog').showModal();
+    const existing=row&&!row.virtual;
+    correction={uid:selected.uid,version:existing?row.version||0:0};$('#admin-correction-form').reset();$('#admin-correction-title').textContent=existing?'Ajustar registro':'Adicionar marcação ausente';
+    $('#admin-correction-person').textContent=`${selected.name} · ${selected.email}`;$('#admin-correction-before').textContent=existing?recordText(row):row?`${row.label} · informação do calendário, sem marcação armazenada.`:'Sem registro';
+    $('#admin-correction-date').value=date||($('#admin-month').value===currentMonth()?today():$('#admin-month').value+'-01');$('#admin-correction-date').readOnly=Boolean(existing);$('#admin-correction-date').max=today();
+    $('#admin-correction-status').value=existing?row.status:'recorded';$('#admin-correction-times').value=row?.times.join(' | ')||'';$('#admin-correction-error').hidden=true;correctionPreview();$('#admin-correction-dialog').showModal();
   }
   async function history(){
     clearError();const generation=epoch;$('#admin-history-list').innerHTML='<div class="empty-state">Carregando histórico…</div>';
@@ -111,5 +120,6 @@ export function createAdmin({api,busy,toast,formatDate,hours,currentMonth,curren
   };
   $('#admin-refresh-history').onclick=()=>{historyOffset=0;history();};$('#admin-history-employee').onchange=()=>{historyOffset=0;history();};
   $('#admin-history-prev').onclick=()=>{historyOffset=Math.max(0,historyOffset-50);history();};$('#admin-history-next').onclick=()=>{if(historyNext!==null){historyOffset=historyNext;history();}};
-  return {async open(){if(!$('#admin-month').value)$('#admin-month').value=currentMonth();await users();if(tab==='history')await history();if(tab==='registry')await registry.open();},reset(){epoch++;team=[];choices=[];records=[];selected=null;access=null;correction=null;usersOffset=historyOffset=0;registry.reset();for(const id of ['admin-users-table','admin-records-table','admin-history-list'])$('#'+id).innerHTML='';chooseOptions([]);for(const id of ['admin-access-dialog','admin-correction-dialog'])$('#'+id).close();showTab('users');}};
+  showTab('team',{load:false,scroll:false,notify:false});
+  return {async open(){if(!$('#admin-month').value)$('#admin-month').value=currentMonth();await showTab(tab,{scroll:false,notify:false});},reset(){epoch++;team=[];choices=[];records=[];selected=null;access=null;correction=null;usersOffset=historyOffset=0;registry.reset();for(const id of ['admin-users-table','admin-records-table','admin-history-list'])$('#'+id).innerHTML='';chooseOptions([]);for(const id of ['admin-access-dialog','admin-correction-dialog'])$('#'+id).close();showTab('team',{load:false,scroll:false,notify:false});}};
 }

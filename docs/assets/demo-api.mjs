@@ -1,6 +1,7 @@
 /* Presentation simulator. No backend, Firebase, credentials, or production data. */
-import {journeyDemo} from './journey-demo.mjs?v=phase1-2';
+import {journeyDemo} from './journey-demo.mjs?v=calendar-1';
 import {registryDemo} from './registry-demo.mjs?v=phase1-2';
+import {calendarContext,enrichCalendar,projectMonth,matchesCalendarFilter,calendarSummary,calendarFilters,calendarCsv} from './calendar.mjs?v=calendar-1';
 const MONTHS = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,MAIO:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
 const LABELS = {recorded:'Registrado',weekend:'Fim de semana',not_applicable:'Não se aplica',medical:'Atestado'};
 let loggedIn=false, preview=null;
@@ -133,14 +134,16 @@ export async function demoApi(action,{data=null,query=''}={}){
   if(action==='records'){
     const params=new URLSearchParams(query.replace(/^&/,'')),month=params.get('month')||dateNow().slice(0,7),status=params.get('status')||'';
     if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))error('Mês inválido.');
-    if(!['','recorded','weekend','medical','not_applicable'].includes(status))error('Situação inválida.');
-    const rows=[...days.values()].filter(d=>d.date.startsWith(month+'-')&&(!status||d.status===status)).sort((a,b)=>b.date.localeCompare(a.date)).map(decorate);
-    return {rows,today:days.has(dateNow())?decorate(days.get(dateNow())):null,summary:{minutes:rows.reduce((sum,row)=>sum+row.minutes,0),days:rows.filter(row=>row.times.length).length,pending:rows.filter(row=>row.incomplete).length,medical:rows.filter(row=>row.status==='medical').length}};
+    if(!calendarFilters.includes(status))error('Situação inválida.');
+    const schedules=journeyDemo('demo-calendar',context).schedules;
+    const rows=projectMonth([...days.values()].map(decorate),month,schedules,dateNow()).filter(row=>matchesCalendarFilter(row,status));
+    return {rows,today:days.has(dateNow())?enrichCalendar(decorate(days.get(dateNow())),schedules):null,todayContext:calendarContext(dateNow(),schedules),summary:calendarSummary(rows)};
   }
   if(action==='punch'){
-    if(requests.has(data.requestId))return {record:decorate(requests.get(data.requestId))};
+    const schedules=journeyDemo('demo-calendar',context).schedules;
+    if(requests.has(data.requestId))return {record:enrichCalendar(decorate(requests.get(data.requestId)),schedules)};
     const date=dateNow(),row=days.get(date)||{date,status:'recorded',times:[],source:'demo'};
-    if(row.status!=='recorded')error('Este dia já tem uma ocorrência importada. Confira seu espelho de ponto.',409);
+    if(!['recorded','weekend'].includes(row.status))error('Este dia já tem uma ocorrência importada. Confira seu espelho de ponto.',409);
     const count=row.times.length;
     if(!((data.type==='entry'&&count===0)||(data.type==='exit'&&count%2===1)||(data.type==='return'&&count>=2&&count%2===0))||count>=12)error('A sequência de marcações mudou. Atualize a página.',409);
     let time=timeNow();
@@ -148,8 +151,8 @@ export async function demoApi(action,{data=null,query=''}={}){
       const next=seconds(row.times.at(-1))+1;if(next>=86400)error('O dia terminou. Atualize a página.',409);
       time=[Math.floor(next/3600),Math.floor(next%3600/60),next%60].map(n=>String(n).padStart(2,'0')).join(':');
     }
-    const saved={...row,times:[...row.times,time]};days.set(date,saved);requests.set(data.requestId,saved);await registryDemo.observePunch({record:saved,type:data.type,requestId:data.requestId});
-    return {record:decorate(saved)};
+    const saved={...row,status:'recorded',times:[...row.times,time]};days.set(date,saved);requests.set(data.requestId,saved);await registryDemo.observePunch({record:saved,type:data.type,requestId:data.requestId});
+    return {record:enrichCalendar(decorate(saved),schedules)};
   }
   if(action==='import-preview'){
     preview=await parseSpreadsheet(data.get('file'),Number(data.get('year')));preview.expires=Date.now()+900000;return preview;
@@ -176,10 +179,7 @@ export async function demoDownload(url){
   }
   if(params.get('action')==='export'){
     const month=params.get('month');const {rows}=await demoApi('records',{query:`&${params.toString()}`});
-    const escape=value=>'"'+String(value).replaceAll('"','""')+'"';
-    const lines=[['Data','Marcações','Situação','Horas trabalhadas','Origem']];
-    for(const row of rows.reverse())lines.push([row.date.split('-').reverse().join('/'),row.times.map(t=>t.slice(0,5)).join(' | '),row.label,`${String(Math.floor(row.minutes/60)).padStart(2,'0')}:${String(row.minutes%60).padStart(2,'0')}`,row.source]);
-    saveBlob(new Blob(['\uFEFF'+lines.map(row=>row.map(escape).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),`ponto-${month}.csv`);return;
+    saveBlob(new Blob([calendarCsv(rows)],{type:'text/csv;charset=utf-8'}),`ponto-${month}.csv`);return;
   }
   error('Download indisponível.');
 }

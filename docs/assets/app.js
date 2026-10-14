@@ -1,9 +1,10 @@
-import {createAdmin} from './admin.js?v=phase1-2';
-import {createJourney} from './journey.js?v=phase1-2';
+import {createAdmin} from './admin.js?v=calendar-1';
+import {createJourney} from './journey.js?v=calendar-1';
+import {recordStatus,sourceLabel,calendarTotals,todayCalendarNote} from './calendar-ui.mjs?v=calendar-1';
 import {exchangeFirebaseLogin,restoreFirebaseLogin} from './persistent-login.mjs?v=auth-1';
-import {apiBase,demoHref} from './connection.js?v=phase1-2';
+import {apiBase,demoHref} from './connection.js?v=calendar-1';
 const isDemo=document.body.dataset.mode==='demo';
-const demoClient=isDemo?await import('./demo-api.mjs?v=phase1-2'):null;
+const demoClient=isDemo?await import('./demo-api.mjs?v=calendar-1'):null;
 const externalAPI=Boolean(apiBase&&new URL(apiBase).origin!==location.origin);
 let apiSessionToken=null;
 const apiURL=path=>new URL(path,apiBase||document.baseURI).href;
@@ -269,9 +270,11 @@ function updateClock() {
   const p=currentParts(); const day=`${p.year}-${p.month}-${p.day}`;
   if(state.loadedDay && state.loadedDay!==day) { state.loadedDay=day; loadHome(); }
 }
-function renderToday(day) {
-  state.today=day; const times=day?.times || []; const count=times.length; const occurrence=day && day.status!=='recorded';
+function renderToday(day,context={}) {
+  state.todayContext=context;
+  state.today=day; const times=day?.times || []; const count=times.length; const occurrence=day&&!day.virtual&&!['recorded','weekend'].includes(day.status);
   const active=count%2===1;
+  const note=todayCalendarNote(context);if($('#punch-calendar-note')){$('#punch-calendar-note').textContent=note;$('#punch-calendar-note').hidden=!note;}
   $('#punch-state').textContent=occurrence ? day.label : count===0 ? 'Jornada não iniciada' : active ? 'Jornada em andamento' : 'Saída registrada';
   $('#punch-hint').textContent=occurrence ? 'Confira a ocorrência no seu espelho.' : count===0 ? 'Tudo pronto para começar seu dia.' : active ? 'Lembre de registrar sua saída.' : 'Uma nova entrada inicia outro período.';
   $('#punch span').textContent=active?'Registrar saída':'Registrar entrada'; $('#punch').disabled=Boolean(occurrence || count>=12);
@@ -287,8 +290,8 @@ function recordsTable(rows,{preview=false,filtered=false}={}) {
   const body=rows.map(row=>{
     const weekday=new Intl.DateTimeFormat('pt-BR',{weekday:'short',timeZone:state.timezone}).format(dateObject(row.date)).replace('.','');
     const times=row.times.length ? row.times.map(t=>esc(t.slice(0,5))).join('<span class="time-separator">|</span>') : (preview?esc(row.raw):'—');
-    const pending=row.times.length%2===1; const status=`<span class="status ${pending?'pending':esc(row.status)}">${pending?'Em aberto':esc(row.label)}</span>`;
-    const source={import:'Planilha',live:'Site',demo:'Exemplo',admin:'Ajuste ADMIN'}[row.source] || 'Planilha';
+    const status=recordStatus({...row,incomplete:row.times.length%2===1});
+    const source=sourceLabel(row);
     return `<tr><td>${esc(formatDate(row.date))}<span class="day-week">${esc(weekday)}</span></td><td class="times">${times}${preview?'':`<span class="mobile-status">${status}</span>`}</td><td class="times">${row.times.length?hours(row.minutes):'—'}</td>${preview ? `<td><span class="status ${row.exists?'existing':''}">${row.exists?'Já existe · preservar':'Novo registro'}</span></td>` : `<td>${status}</td><td><span class="source-label">${source}</span></td>`}</tr>`;
   }).join('');
   return `<div class="table-scroll"><table class="records-table ${preview?'preview-table':'history-table'}"><thead><tr>${header.map(h=>`<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
@@ -299,7 +302,7 @@ async function loadHome() {
   try {
     const result=await api('records',{query:`&month=${currentMonth()}`});
     const p=currentParts(); state.loadedDay=`${p.year}-${p.month}-${p.day}`;
-    renderToday(result.today); $('#summary-month').textContent=monthLabel(currentMonth());
+    renderToday(result.today,result.todayContext); $('#summary-month').textContent=monthLabel(currentMonth());
     $('#stat-days').innerHTML=`${result.summary.days} <small>dias</small>`;
     $('#stat-hours').innerHTML=`${Math.floor(result.summary.minutes/60).toString().padStart(2,'0')}<small>h</small> ${(result.summary.minutes%60).toString().padStart(2,'0')}<small>m</small>`;
     $('#stat-pending').innerHTML=`${result.summary.pending} <small>dias</small>`; $('#stat-medical').innerHTML=`${result.summary.medical} <small>dias</small>`;
@@ -318,7 +321,7 @@ $('#confirm-punch').onclick=async()=>{
   try { await busy($('#confirm-punch'),async()=>{
     if(!state.punchRequest || state.punchRequest.type!==state.nextPunch) state.punchRequest={type:state.nextPunch,requestId:crypto.randomUUID()};
     const result=await api('punch',{method:'POST',data:state.punchRequest}); state.punchRequest=null;
-    $('#punch-confirm').close(); renderToday(result.record); toast(`Ponto registrado às ${result.record.times.at(-1).slice(0,5)}.`); await loadHome();
+    $('#punch-confirm').close(); renderToday(result.record,state.todayContext); toast(`Ponto registrado às ${result.record.times.at(-1).slice(0,5)}.`); await loadHome();
   },'Registrando…'); } catch(error){if(error.status && error.status<500)state.punchRequest=null; $('#punch-confirm').close();toast(error.message,true);await loadHome();}
   finally{$('#cancel-punch').disabled=false;}
 };
@@ -326,8 +329,10 @@ async function loadHistory() {
   if(!state.session?.user) return; const sequence=(state.historySequence||0)+1; state.historySequence=sequence; $('#data-error').hidden=true;
   $('#history-table').innerHTML='<div class="empty-state">Carregando registros…</div>';
   $('#history-summary').textContent='';
+  if($('#history-calendar-summary'))$('#history-calendar-summary').innerHTML='';
   try { const result=await api('records',{query:historyQuery()}); if(sequence!==state.historySequence)return;
-    $('#history-table').innerHTML=recordsTable(result.rows,{filtered:Boolean(state.historyStatus)}); $('#history-summary').textContent=`${result.rows.length} ${result.rows.length===1?'dia':'dias'} · ${hours(result.summary.minutes)}`;
+    $('#history-table').innerHTML=recordsTable(result.rows,{filtered:Boolean(state.historyStatus)}); $('#history-summary').textContent=`${result.rows.length} ${result.rows.length===1?'dia exibido':'dias exibidos'} · ${result.summary.days} com ponto · ${hours(result.summary.minutes)}`;
+    if($('#history-calendar-summary'))$('#history-calendar-summary').innerHTML=calendarTotals(result.summary,hours);
   }catch(error){if(sequence===state.historySequence){$('#history-table').innerHTML='<div class="empty-state">Não foi possível carregar os registros.</div>';showDataError(error.message);}}
 }
 function historyQuery(){return `&month=${encodeURIComponent(state.month)}${state.historyStatus?`&status=${encodeURIComponent(state.historyStatus)}`:''}`;}
