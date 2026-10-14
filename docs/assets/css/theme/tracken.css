@@ -1,0 +1,352 @@
+:root {
+  --ink:#192414;
+  --paper:#fff;
+  --bg:#fafbf8;
+  --wash:#f1f5ea;
+  --line:#e0e7d9;
+  --line-strong:#b5ce9e;
+  --muted:#64715b;
+  --accent:#68b42e;
+  --accent-ink:#15240d;
+  --teal:#3c711a;
+  --navy:#68b42e;
+  --green-wash:#edf5e3;
+}
+body {
+  background: var(--bg);
+}
+.button {
+  border-color: var(--line);
+  color: var(--ink);
+}
+.button.primary,
+.punch-button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.button.primary:hover,
+.punch-button:hover {
+  background: #569e26;
+  border-color: #569e26;
+  color: var(--accent-ink);
+}
+.button.secondary {
+  background: #fff;
+  border-color: #dde6d4;
+  color: var(--ink);
+}
+.button.secondary:hover,
+.icon-button:hover {
+  background: #f1f5ea;
+}
+.text-button {
+  color: var(--teal);
+}
+input::placeholder,
+textarea::placeholder {
+  color: #64715b;
+}
+.sidebar,
+.login-intro {
+  background: var(--navy);
+  color: #14220c;
+}
+.sidebar .brand-logo,
+.login-intro .brand-logo {
+  background: #68b42e;
+}
+.sidebar .brand-name strong span,
+.login-intro .brand-name strong span {
+  color: #fff;
+}
+.nav-label {
+  color: #263e18;
+}
+.nav-button {
+  color: #1b2e10;
+}
+.nav-button:hover {
+  background: #ffffff30;
+  color: #13220b;
+}
+.nav-button.active {
+  background: #ffffffdf;
+  color: #274e13;
+}
+.nav-button.active .icon {
+  color: #3c711a;
+}
+.nav-button.active:before {
+  background: #3c711a;
+}
+.sidebar-note {
+  color: #223716;
+}
+.sidebar-note > .icon {
+  color: #274e13;
+}
+.sidebar-note strong {
+  color: #16290b;
+}
+.sidebar-user {
+  border-color: #3c711a55;
+}
+.avatar {
+  background: #ffffffd9;
+  border-color: #ffffff77;
+  color: #274e13;
+}
+.sidebar-user div > span,
+.sidebar-user .icon-button {
+  color: #253b17;
+}
+.sidebar-user .icon-button:hover {
+  background: #ffffff30;
+  color: #13220b;
+}
+.brand-sub {
+  color: #253b17;
+}
+.login-copy > .eyebrow,
+.login-copy > p,
+.login-clock div > span,
+.login-footer {
+  color: #213713;
+}
+.login-copy h1 > span {
+  color: #fff;
+}
+.clock-face {
+  border-color: #213713;
+}
+.clock-face:before,
+.clock-face:after {
+  background: #213713;
+}
+.login-layout,
+.login-form-wrap {
+  background: #fff;
+}
+.boot {
+  background:
+    radial-gradient(
+      ellipse at 50% 44%,
+      #f0f7e9 0,
+      transparent 55%),
+    var(--bg);
+}
+.boot-loader:after {
+  border-color: #e0ecd7;
+  border-top-color: #68b42e;
+  border-right-color: #90ce64;
+}
+.boot-title strong span {
+  color: #437d1b;
+}
+.breadcrumb > span {
+  color: #64715b;
+}
+.breadcrumb strong,
+.today-total strong,
+.empty-state strong {
+  color: #435738;
+}
+.small-avatar,
+.admin-badge {
+  background: #edf5e3;
+  color: #3c711a;
+  border-color: #d4e4c5;
+}
+.mode-badge {
+  background: #fffaf0;
+  color: #9c772e;
+  border-color: #e7d4af;
+}
+.demo-banner {
+  background: #fff8e9;
+  color: #8e722e;
+  border-color: #f3e7ce;
+}
+.workspace-footer,
+.workspace-footer > span:first-child,
+.workspace-footer > span:first-child > span {
+  color: #64715b;
+}
+.page-heading h1 > span {
+  color: #3c711a;
+}
+.punch-card {
+  background: #f1f7e9;
+  border-color: #dce9ce;
+}
+.punch-top,
+.timezone-pill,
+.today-date,
+.punch-bottom p {
+  color: #526b41;
+}
+.timezone-pill {
+  background: transparent;
+  border-color: #d4e4c5;
+}
+.live-clock {
+  color: #284218;
+}
+.live-clock > span {
+  color: #657957;
+}
+.punch-state {
+  color: #435738;
+}
+.punch-state:before {
+  background: #657957;
+}
+.timeline-item:before {
+  background: #d4e4c5;
+}
+.timeline-dot {
+  background: #3c711a;
+  border-color: #d4e4c5;
+}
+.timeline-dot.empty {
+  background: #fff;
+  border-color: #dde6d4;
+}
+.time-separator,
+.empty-state .icon,
+.phase-number {
+  color: #bdcbb2;
+}
+.records-table th {
+  background: #f9fbf6;
+  color: #64715b;
+}
+.records-table td {
+  color: #435738;
+}
+.status {
+  background: #edf5e5;
+  color: #3c711a;
+  border-color: #d4e4c5;
+}
+.status.pending {
+  background: #fff6e6;
+  color: #876525;
+  border-color: #e7d4af;
+}
+.status.blocked {
+  background: #fbece7;
+  color: #a05238;
+  border-color: #efd9cc;
+}
+.status.weekend,
+.status.not_applicable,
+.status.existing {
+  background: #f1f5ea;
+  color: #64715b;
+  border-color: #e0e7d9;
+}
+.status.medical {
+  background: #f2f0f9;
+  color: #796895;
+  border-color: #ded8ec;
+}
+.admin-tabs button.active {
+  color: #3c711a;
+  border-color: #3c711a;
+}
+.admin-before {
+  background: #f1f5ea;
+}
+.admin-comparison > div {
+  background: #f9fbf6;
+}
+.admin-comparison > div:last-child {
+  background: #edf5e5;
+}
+.overtime-running {
+  background: #edf5e3;
+  border-color: #d9e9c8;
+}
+.presence-state:before {
+  background: #bdcbb2;
+}
+.model-card {
+  background: #f3f7ed;
+}
+.dropzone {
+  background: #f9fbf6;
+  border-color: #b5ce9e;
+}
+.dropzone:hover,
+.dropzone.dragover {
+  background: #edf5e5;
+  border-color: #3c711a;
+}
+.dropzone small {
+  color: #64715b;
+}
+.mini-sheet th {
+  background: #e0edcf;
+}
+.mini-sheet td:first-child {
+  background: #f9fbf6;
+}
+#import-warnings {
+  background: #fff8ec;
+  color: #8b682e;
+  border-color: #f4e4c8;
+}
+.form-message {
+  background: #fff4ed;
+  color: #ad422c;
+  border-color: #efd9cc;
+}
+.data-error {
+  background: #fff6f0;
+  color: #a05238;
+  border-color: #efd9cc;
+}
+.form-success {
+  background: #edf5e5;
+  color: #3c711a;
+  border-color: #d4e4c5;
+}
+.confirm-dialog {
+  color: var(--ink);
+  border-color: var(--line);
+  box-shadow: 0 20px 80px #18230f26;
+}
+.confirm-dialog::backdrop {
+  background: #18230f66;
+}
+.dialog-icon {
+  background: #edf5e5;
+  color: #3c711a;
+}
+.toast {
+  background: #284218;
+  border-color: #435738;
+  box-shadow: 0 8px 28px #18230f22;
+}
+.toast.error {
+  background: #8c452f;
+  border-color: #a7553c;
+}
+.sidebar-backdrop.open {
+  background: #18230f66;
+}
+input,
+select,
+textarea {
+  border-color: #dde6d4;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.dropzone:focus-within {
+  outline-color: #3c711a;
+}

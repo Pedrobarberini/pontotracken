@@ -1,0 +1,167 @@
+.journey-status-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.journey-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.journey-card h2 {
+  margin-bottom: 7px;
+}
+.journey-card > .muted {
+  font-size: 13px;
+}
+.journey-card select,
+.journey-card input {
+  margin-top: 0;
+}
+.journey-card > select {
+  margin-top: 14px;
+}
+.journey-schedule {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 16px;
+  font-weight: 500;
+}
+.journey-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+}
+.journey-submit .field-hint {
+  margin: 0;
+  max-width: 65ch;
+}
+.journey-card form > label {
+  margin-top: 18px;
+}
+.overtime-running {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #b4d5a4;
+  border-radius: 8px;
+  background: var(--green-wash);
+  padding: 18px;
+  margin: 18px 0;
+}
+.overtime-running > div > span {
+  display: block;
+}
+.overtime-clock {
+  display: block;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.3;
+  margin: 8px 0;
+}
+.overtime-running-info,
+#overtime-running-info {
+  font-size: 12px;
+  color: var(--muted);
+}
+.overtime-item {
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.overtime-item:first-child {
+  border-top: 0;
+}
+.overtime-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.overtime-item > p {
+  font-size: 13px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.overtime-item > .button {
+  margin-top: 10px;
+}
+.overtime-details {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 7px 16px;
+  font-size: 13px;
+  margin: 14px 0;
+}
+.overtime-details dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.overtime-details dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.overtime-details dd + dt {
+  padding-top: 5px;
+}
+.team-metrics {
+  margin-top: 22px;
+}
+.team-table {
+  min-width: 1040px;
+}
+.presence-state {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.presence-state:before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #bbb;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.presence-state.connected:before {
+  background: var(--accent);
+}
+.schedule-weekdays {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.schedule-weekdays legend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 5px;
+}
+.schedule-weekdays label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  margin: 0;
+}
+.schedule-weekdays input {
+  padding: 0;
+}
+.eligibility-note {
+  font-size: 13px;
+  border-left: 3px solid var(--accent);
+  background: var(--wash);
+  padding: 12px 14px;
+  margin-top: 14px;
+}

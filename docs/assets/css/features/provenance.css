@@ -1,0 +1,52 @@
+.provenance-dialog {
+  max-width: 760px;
+}
+.provenance-section {
+  padding: 16px;
+  margin-top: 16px;
+}
+.provenance-section h3 {
+  font-size: 14px;
+}
+.provenance-event {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 14px;
+  font-size: 13px;
+}
+.provenance-event > strong {
+  font-size: 13px;
+}
+.provenance-event code {
+  font-size: 11px;
+  white-space: normal;
+  word-break: break-all;
+}
+.provenance-event .field-hint {
+  display: block;
+}
+.provenance-dialog > .dialog-actions {
+  position: sticky;
+  bottom: -26px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+  padding: 14px 0;
+  margin-bottom: -12px;
+}
+.provenance-section .empty-state {
+  padding: 20px 0;
+}
+@media (max-width: 600px) {
+  .provenance-dialog {
+    padding: 22px;
+  }
+  .provenance-section {
+    padding: 13px;
+  }
+  .provenance-dialog .overtime-details {
+    grid-template-columns: 1fr;
+  }
+  .provenance-dialog > .dialog-actions {
+    bottom: -22px;
+  }
+}
