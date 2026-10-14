@@ -74,15 +74,19 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
     if(action==='people-context')return {uid:actorUid,role:actor().role,...capabilities(actorUid),managers:[...profiles.values()].filter(p=>p.status==='active'&&['manager','admin'].includes(p.role)).map(p=>({uid:p.uid,name:p.name,email:p.email}))};
     if(action==='people-list') {
       if(actor().role==='employee')fail('Acesso restrito à gestão.',403);
-      const term=(params.get('q')||'').toLowerCase(),department=params.get('department')||'';
+      const term=(params.get('q')||'').toLowerCase(),department=params.get('department')||'',incomplete=params.get('incomplete')||'',status=params.get('status')||'';
+      if(!['','0','1'].includes(incomplete)||!['','pending','active','blocked'].includes(status))fail('Filtro de colaboradores inválido.');
       const scoped=[...profiles.values()].filter(p=>inScope(p.uid));
-      const filtered=scoped.filter(p=>(!department||p.department===department)&&[p.name,p.email,p.jobTitle].join(' ').toLowerCase().includes(term));
+      const filtered=scoped.filter(p=>(!department||p.department===department)&&(!status||p.status===status)&&(incomplete!=='1'||professionalFields.some(field=>!p[field]))&&[p.name,p.email,p.jobTitle].join(' ').toLowerCase().includes(term));
       const page=paginate(filtered.map(profileDTO),params);return {people:page.rows,nextOffset:page.nextOffset,departments:[...new Set(scoped.map(p=>p.department).filter(Boolean))].sort()};
     }
     if(action==='people-profile')return {profile:profileDTO(target(uid)),capabilities:capabilities(uid)};
     if(action==='people-timeline'||action==='people-documents') {
       target(uid);const map=action==='people-timeline'?events:documents;
-      return paginate([...map.values()].filter(item=>item.uid===uid&&canRead(item)&&(item.status===(params.get('archived')==='1'?'archived':'active'))&&(!params.get('type')||item.type===params.get('type'))).sort((a,b)=>(b.occurredOn||b.createdAt).localeCompare(a.occurredOn||a.createdAt)).map(item=>action==='people-timeline'?eventDTO(item):docDTO(item)),params);
+      const id=params.get('id')||'';
+      if(id.length>64)fail('Identificador inválido.');
+      const paging=id?new URLSearchParams():params;
+      return paginate([...map.values()].filter(item=>item.uid===uid&&canRead(item)&&(!id||item.id===id)&&(item.status===(params.get('archived')==='1'?'archived':'active'))&&(!params.get('type')||item.type===params.get('type'))).sort((a,b)=>(b.occurredOn||b.createdAt).localeCompare(a.occurredOn||a.createdAt)).map(item=>action==='people-timeline'?eventDTO(item):docDTO(item)),paging);
     }
     if(action==='people-profile-save') {
       const profile=target(uid),permission=capabilities(uid);validateVersion(profile,data.version);text(data.reason,10,1000,'Descreva o motivo da atualização.');const updates={};
@@ -127,8 +131,16 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
     fail('Ação da ficha indisponível.',404);
   }
   function download(id) {const document=accessItem(documents,id);return {blob:files.get(id),filename:document.filename};}
+  async function downloadTerm(id) {
+    const requestedActor=actorUid,event=accessItem(events,id),profile=target(event.uid);
+    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=phase2-finish-1');
+    const bytes=await generateTermPdf({employee:{name:profile.name,employeeNumber:profile.employeeNumber,jobTitle:profile.jobTitle,department:profile.department},event:{id:event.id,type:event.type,title:event.title,content:event.content,occurredOn:event.occurredOn,createdByName:event.createdByName,createdAt:event.createdAt,version:event.version,status:event.status,archivedAt:event.archivedAt,archiveReason:event.archiveReason},generatedAt:now(),demonstration:true});
+    if(actorUid!==requestedActor)fail('A sessão demonstrativa mudou. Gere o termo novamente.',403);
+    accessItem(events,id);
+    return {blob:new Blob([bytes],{type:'application/pdf'}),filename:`termo-ciencia-${event.id}-v${event.version}.pdf`};
+  }
   function select(uid) {if(!demoActors.some(item=>item.uid===uid))fail('Perfil demonstrativo inválido.');actorUid=uid;return sessionUser();}
   function sessionUser() {const profile=actor();return {uid:actorUid,name:profile.name,email:profile.email,demo:true,role:profile.role==='admin'?'admin':'employee'};}
-  return {request,download,select,sessionUser};
+  return {request,download,downloadTerm,select,sessionUser};
 }
 export const peopleDemo=createPeopleDemo();

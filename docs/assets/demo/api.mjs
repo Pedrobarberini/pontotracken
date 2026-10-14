@@ -1,7 +1,7 @@
-import { journeyDemo } from "./journey.mjs?v=perf-1";
-import { provenanceDemo } from "./provenance.mjs?v=perf-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=perf-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=perf-1";
+import { journeyDemo } from "./journey.mjs?v=phase2-finish-1";
+import { provenanceDemo } from "./provenance.mjs?v=phase2-finish-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=phase2-finish-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=phase2-finish-1";
 const MONTHS = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, MAIO: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
 const LABELS = { recorded: "Registrado", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 let loggedIn = false, preview = null;
@@ -265,6 +265,11 @@ function saveBlob(blob, name) {
 async function demoDownload(url) {
   if (!loggedIn) error("Abra a demonstração para continuar.", 401);
   const params = new URL(url, location.href).searchParams;
+  if (params.get("action") === "people-event-term") {
+    const file = await peopleDemo.downloadTerm(params.get("id"));
+    saveBlob(file.blob,file.filename);
+    return;
+  }
   if (params.get("action") === "people-file-download") {
     const file = peopleDemo.download(params.get("id"));
     saveBlob(file.blob,file.filename);

@@ -1,10 +1,10 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=perf-1';
-import { roleNames } from './presentation.mjs?v=perf-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=perf-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=phase2-finish-1';
+import { roleNames } from './presentation.mjs?v=phase2-finish-1';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=phase2-finish-1';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';
-  let rows = [], nextOffset = null, filter = '', archived = false, people = [], departments = [], listOffset = null, search = '', department = '';
+  let rows = [], nextOffset = null, filter = '', archived = false, focusedId = '', people = [], departments = [], listOffset = null, search = '', department = '', incomplete = false;
   let generation = 0, identityEpoch = 0, initializing = null;
   const dateNow = () => { const parts = currentParts(); return `${parts.year}-${parts.month}-${parts.day}`; };
   const dialog = document.createElement('dialog');
@@ -20,7 +20,7 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     root.innerHTML = `${tabs}<div class="empty-state" role="status">${e(label)}</div>`;
   }
   function bindTabs() {
-    $$('[data-people-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.peopleTab;run(loadProfile);});
+    $$('[data-people-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.peopleTab;focusedId='';run(loadProfile);});
   }
   async function initialize() {
     if (!initializing) {
@@ -41,7 +41,7 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
   function reset() {
     generation++; identityEpoch++; initializing = null;
     context = null; profile = null; capabilities = {}; selectedUid = ''; rows = []; tab = 'history';
-    people = []; departments = []; nextOffset = listOffset = null; filter = search = department = ''; archived = false;
+    people = []; departments = []; nextOffset = listOffset = null; filter = search = department = focusedId = ''; archived = incomplete = false;
     state.peopleContext = null;
     $('#people-nav').hidden = true; $('#management-nav').hidden = true;
     dialog.close(); dialog.innerHTML = '';
@@ -52,13 +52,13 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     try {
       if (!context) await initialize();
       if (!context || !current(token, view)) return;
-      if (view === 'ficha') { selectedUid = state.session.user.uid; await loadProfile(); }
+      if (view === 'ficha') { selectedUid = state.session.user.uid; focusedId = ''; await loadProfile(); }
       if (view === 'pessoas') await loadList();
       if (view === 'gestao') await loadDashboard();
     } catch (error) { if (current(token, view)) fail($(view === 'pessoas' ? '#people-list-content' : view === 'gestao' ? '#people-dashboard-content' : '#people-profile-content'), error.message); }
   }
-  async function selectPerson(uid) {
-    selectedUid = uid; tab = 'history'; filter = ''; archived = false;
+  async function selectPerson(uid, { targetTab = 'history', id = '' } = {}) {
+    selectedUid = uid; tab = targetTab; focusedId = id; filter = ''; archived = false;
     switchView('ficha', false);
     window.scrollTo({top:0,behavior:'instant'});
     await loadProfile();
@@ -66,23 +66,24 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
   async function loadList(append = false) {
     const token = ++generation;
     const root = $('#people-list-content'), previousPeople = append ? [...people] : [];
-    const query = `&q=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}&offset=${append ? listOffset || 0 : 0}`;
+    const query = `&q=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}&incomplete=${incomplete ? 1 : 0}&offset=${append ? listOffset || 0 : 0}`;
     loading(root, 'Carregando colaboradores…');
     try {
       const result = await api('people-list', {query});
       if (!current(token, 'pessoas')) return;
       people = [...previousPeople, ...result.people];
       departments = result.departments; listOffset = result.nextOffset;
-      root.innerHTML = listView({people,departments,query:search,department,nextOffset:listOffset});
+      root.innerHTML = listView({people,departments,query:search,department,incomplete,nextOffset:listOffset});
       root.setAttribute('aria-busy', 'false');
-    $('#people-list-filter').onsubmit = event => { event.preventDefault(); search = $('#people-search').value.trim(); department = $('#people-department-filter').value; run(loadList); };
+    $('#people-list-filter').onsubmit = event => { event.preventDefault(); search = $('#people-search').value.trim(); department = $('#people-department-filter').value; incomplete = $('#people-incomplete-filter').checked; run(loadList); };
+    $('#people-incomplete-filter').onchange = event => { incomplete = event.target.checked; search = $('#people-search').value.trim(); department = $('#people-department-filter').value; run(loadList); };
     $$('[data-person]').forEach(button => button.onclick = () => selectPerson(button.dataset.person));
     $('[data-people-list-more]')?.addEventListener('click', () => run(() => loadList(true)));
     } catch (error) { if (current(token, 'pessoas')) fail(root, error.message); }
   }
   async function loadProfile(append = false) {
     const token = ++generation;
-    const uid = selectedUid || state.session.user.uid, requestedTab = tab, requestedFilter = filter, requestedArchived = archived;
+    const uid = selectedUid || state.session.user.uid, requestedTab = tab, requestedFilter = filter, requestedArchived = archived, requestedId = focusedId;
     const offset = append ? nextOffset || 0 : 0, previousRows = append ? [...rows] : [], root = profileRoot();
     const tabs = `<div class="people-tabs" role="tablist" aria-label="Ficha do colaborador">${[['history','Histórico'],['data','Dados'],['documents','Documentos']].map(([value,label])=>`<button role="tab" aria-selected="${requestedTab===value}" data-people-tab="${value}">${label}</button>`).join('')}</div>`;
     loading(root, 'Carregando ficha…', tabs);
@@ -90,25 +91,32 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     try {
       const [result, page] = await Promise.all([
         api('people-profile', {query:`&uid=${encodeURIComponent(uid)}`}),
-        requestedTab === 'data' ? null : api(requestedTab === 'documents' ? 'people-documents' : 'people-timeline', {query:`&uid=${encodeURIComponent(uid)}&type=${encodeURIComponent(requestedFilter)}&archived=${requestedArchived ? 1 : 0}&offset=${offset}`})
+        requestedTab === 'data' ? null : api(requestedTab === 'documents' ? 'people-documents' : 'people-timeline', {query:`&uid=${encodeURIComponent(uid)}&type=${encodeURIComponent(requestedFilter)}&archived=${requestedArchived ? 1 : 0}&offset=${offset}${requestedId ? `&id=${encodeURIComponent(requestedId)}` : ''}`})
       ]);
       if (!current(token, 'ficha')) return;
       profile = result.profile; capabilities = result.capabilities;
       rows = page ? [...previousRows,...page.rows] : []; nextOffset = page?.nextOffset ?? null;
-      root.innerHTML = profileView(profile,capabilities,requestedTab,rows,{isSelf:uid===state.session.user.uid,actorUid:state.session.user.uid,today:dateNow(),filter:requestedFilter,archived:requestedArchived,nextOffset});
+      root.innerHTML = profileView(profile,capabilities,requestedTab,rows,{isSelf:uid===state.session.user.uid,actorUid:state.session.user.uid,today:dateNow(),filter:requestedFilter,archived:requestedArchived,focusedId:requestedId,nextOffset});
       root.setAttribute('aria-busy', 'false');
       bindProfile();
+      if (requestedId) {
+        const item = $$('[data-people-item]').find(element => element.dataset.peopleItem === requestedId);
+        item?.focus({preventScroll:true});
+        item?.scrollIntoView({block:'center',behavior:'instant'});
+      }
     } catch (error) { if (current(token, 'ficha')) fail(root, error.message); }
   }
   function bindProfile() {
     $('[data-people-back]')?.addEventListener('click',()=>switchView('pessoas'));
     bindTabs();
-    $('#people-event-filter')?.addEventListener('change',event=>{filter=event.target.value;run(loadProfile);});
-    $('#people-archived')?.addEventListener('change',event=>{archived=event.target.checked;run(loadProfile);});
+    $('#people-event-filter')?.addEventListener('change',event=>{filter=event.target.value;focusedId='';run(loadProfile);});
+    $('#people-archived')?.addEventListener('change',event=>{archived=event.target.checked;focusedId='';run(loadProfile);});
+    $('[data-people-clear-focus]')?.addEventListener('click',()=>{focusedId='';run(loadProfile);});
     $('[data-people-more]')?.addEventListener('click',()=>run(()=>loadProfile(true)));
     $('[data-new-event]')?.addEventListener('click',openEvent);
     $('[data-new-document]')?.addEventListener('click',()=>openDocument());
     $$('[data-file]').forEach(button=>button.onclick=()=>download(`api?action=people-file-download&id=${encodeURIComponent(button.dataset.file)}`));
+    $$('[data-event-term]').forEach(button=>button.onclick=()=>run(()=>busy(button,()=>download(`api?action=people-event-term&id=${encodeURIComponent(button.dataset.eventTerm)}`))));
     $$('[data-ack]').forEach(button=>button.onclick=()=>confirmAcknowledgement(button.dataset.ack));
     $$('[data-proof]').forEach(button=>button.onclick=()=>openDocument(button.dataset.proof));
     $$('[data-archive-event]').forEach(button=>button.onclick=()=>archiveItem('event',button.dataset.archiveEvent));
@@ -197,14 +205,15 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     const counts={pendingAcknowledgements:result.pendingAcknowledgements?.count || 0,expiredDocuments:result.expiredDocuments?.count || 0,expiringDocuments:result.expiringDocuments?.count || 0,incompleteProfiles:Number(result.incompleteProfiles || 0)};
     const labels=[['pendingAcknowledgements','Ciências e comprovantes'],['expiredDocuments','Documentos vencidos'],['expiringDocuments','Vencem em até 30 dias'],['incompleteProfiles','Cadastros incompletos']];
     const items=['pendingAcknowledgements','expiredDocuments','expiringDocuments'].flatMap(kind=>(result[kind]?.rows || []).map(item=>({...item,kind})));
-    $('#people-dashboard-content').innerHTML=`<div class="page-heading"><div><span class="eyebrow muted">GESTÃO DE PESSOAS</span><h1>Início da gestão<span>.</span></h1><p>O que precisa de atenção na sua equipe hoje.</p></div><button class="button secondary" id="people-dashboard-refresh">Atualizar</button></div><p class="people-scope">${Number(result.activePeople || 0)} colaboradores ativos · ${Number(result.people || 0)} fichas no seu escopo</p><div class="people-dashboard-stats">${labels.map(([key,label])=>key==='incompleteProfiles'?`<div class="people-stat"><span>${label}</span><strong>${Number(counts[key]||0)}</strong><small>Revise os dados nas fichas.</small></div>`:`<button class="people-stat" data-dashboard-filter="${key}"><span>${label}</span><strong>${Number(counts[key]||0)}</strong></button>`).join('')}</div><section class="history-card"><div class="card-heading"><h2>Pendências da equipe</h2><span class="muted"><span id="people-dashboard-count">${items.length} ${items.length===1?'item exibido':'itens exibidos'}</span></span></div><div id="people-dashboard-items">${dashboardItems(items)}</div></section><p class="footnote">Os itens respeitam os vínculos da equipe e as permissões do seu perfil. A lista é atualizada quando esta tela é aberta.</p>`;
-    const bindItems=()=>$$('[data-pending-person]').forEach(button=>button.onclick=()=>selectPerson(button.dataset.pendingPerson));bindItems();
+    $('#people-dashboard-content').innerHTML=`<div class="page-heading"><div><span class="eyebrow muted">GESTÃO DE PESSOAS</span><h1>Início da gestão<span>.</span></h1><p>O que precisa de atenção na sua equipe hoje.</p></div><button class="button secondary" id="people-dashboard-refresh">Atualizar</button></div><p class="people-scope">${Number(result.activePeople || 0)} colaboradores ativos · ${Number(result.people || 0)} fichas no seu escopo</p><div class="people-dashboard-stats">${labels.map(([key,label])=>key==='incompleteProfiles'?`<button class="people-stat" data-incomplete-profiles><span>${label}</span><strong>${Number(counts[key]||0)}</strong><small>Abrir cadastros pendentes.</small></button>`:`<button class="people-stat" data-dashboard-filter="${key}"><span>${label}</span><strong>${Number(counts[key]||0)}</strong></button>`).join('')}</div><section class="history-card"><div class="card-heading"><h2>Pendências da equipe</h2><span class="muted"><span id="people-dashboard-count">${items.length} ${items.length===1?'item exibido':'itens exibidos'}</span></span></div><div id="people-dashboard-items">${dashboardItems(items)}</div></section><p class="footnote">Os itens respeitam os vínculos da equipe e as permissões do seu perfil. A lista é atualizada quando esta tela é aberta.</p>`;
+    const bindItems=()=>$$('[data-pending-person]').forEach(button=>button.onclick=()=>run(()=>selectPerson(button.dataset.pendingPerson,{targetTab:button.dataset.pendingTab,id:button.dataset.pendingId})));bindItems();
+    $('[data-incomplete-profiles]').onclick=()=>{incomplete=true;search=department='';switchView('pessoas',false);window.scrollTo({top:0,behavior:'instant'});run(loadList);};
     $('#people-dashboard-refresh').onclick=()=>run(loadDashboard);
     $$('[data-dashboard-filter]').forEach(button=>button.onclick=()=>{$$('[data-dashboard-filter]').forEach(item=>item.classList.toggle('active',item===button));const selected=items.filter(item=>item.kind===button.dataset.dashboardFilter);$('#people-dashboard-items').innerHTML=dashboardItems(selected);$('#people-dashboard-count').textContent=`${selected.length} ${selected.length===1?'item exibido':'itens exibidos'}`;bindItems();});
     root.setAttribute('aria-busy', 'false');
     } catch (error) { if (current(token, 'gestao')) fail(root, error.message); }
   }
-  function dashboardItems(items){return items.length?`<div class="people-pending-list">${items.map(item=>`<button data-pending-person="${e(item.uid)}"><span><strong>${e(item.personName||item.name||item.employeeName||'Colaborador')}</strong><small>${e(item.title||item.label||'Cadastro incompleto')}</small></span><span class="status ${item.kind==='expiredDocuments'?'blocked':'pending'}">${e(item.detail||item.kindLabel||(item.acknowledgementMode==='proof'?'Comprovante pendente':null)||({pendingAcknowledgements:'Ciência pendente',expiredDocuments:'Vencido',expiringDocuments:'Vence em até 30 dias'}[item.kind])||'Revisar ficha')}</span></button>`).join('')}</div>`:'<div class="empty-state">Nenhuma pendência neste grupo.</div>';}
+  function dashboardItems(items){return items.length?`<div class="people-pending-list">${items.map(item=>`<button data-pending-person="${e(item.uid)}" data-pending-tab="${item.kind==='pendingAcknowledgements'?'history':'documents'}" data-pending-id="${e(item.id||item.eventId||item.fileId||'')}"><span><strong>${e(item.personName||item.name||item.employeeName||'Colaborador')}</strong><small>${e(item.title||item.label||'Cadastro incompleto')}</small></span><span class="status ${item.kind==='expiredDocuments'?'blocked':'pending'}">${e(item.detail||item.kindLabel||(item.acknowledgementMode==='proof'?'Comprovante pendente':null)||({pendingAcknowledgements:'Ciência pendente',expiredDocuments:'Vencido',expiringDocuments:'Vence em até 30 dias'}[item.kind])||'Revisar ficha')}</span></button>`).join('')}</div>`:'<div class="empty-state">Nenhuma pendência neste grupo.</div>';}
   function validateFile(file){if(!file)return;if(file.size>5*1024*1024)throw new Error('O arquivo deve ter no máximo 5 MB.');if(!/\.(pdf|png|jpe?g)$/i.test(file.name))throw new Error('Envie um arquivo PDF, PNG ou JPG.');}
   async function formWork(form,errorSelector,work){const error=$(errorSelector);error.hidden=true;try{await busy(form.querySelector('button[type="submit"]'),work);}catch(cause){error.textContent=cause.message;error.hidden=false;}}
   async function run(work){try{await work();}catch(error){toast(error.message,true);}}

@@ -91,3 +91,5 @@ progress::-moz-progress-bar { background:var(--accent); }
 }
 
 #people-dashboard-content .history-card>.card-heading { padding:18px 22px; }
+.people-focus-notice { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;background:var(--green-wash);padding:14px 18px;margin:0 0 18px;font-size:13px; }
+[data-people-item]:focus { outline:2px solid var(--teal);outline-offset:4px; }

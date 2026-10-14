@@ -1,1 +1,1 @@
-import "./app.js?v=perf-1";
+import "./app.js?v=phase2-finish-1";
