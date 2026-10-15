@@ -1,5 +1,5 @@
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=phase2-finish-1";
-import { todayCalendarNote } from "../calendar/presentation.mjs?v=phase2-finish-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=phases34-1";
+import { todayCalendarNote } from "../calendar/presentation.mjs?v=phases34-1";
 function createAttendance({ state, api, busy, toast, hours, currentParts, currentMonth, monthLabel, recordsTable, showDataError }) {
   function updateClock() {
     if (!state.session?.user) return;

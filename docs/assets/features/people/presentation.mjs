@@ -1,4 +1,4 @@
-import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=phase2-finish-1';
+import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=phases34-1';
 
 export const eventTypes = {
   orientation: 'Orientação', feedback: 'Feedback', improvement: 'Melhoria',

@@ -1,6 +1,6 @@
-import { escapeHTML as esc, icon } from "./dom.mjs?v=phase2-finish-1";
-import { dateObject } from "./formatters.mjs?v=phase2-finish-1";
-import { recordStatus, sourceLabel } from "../features/calendar/presentation.mjs?v=phase2-finish-1";
+import { escapeHTML as esc, icon } from "./dom.mjs?v=phases34-1";
+import { dateObject } from "./formatters.mjs?v=phases34-1";
+import { recordStatus, sourceLabel } from "../features/calendar/presentation.mjs?v=phases34-1";
 function createRecordsTable({ state, formatDate, hours }) {
   function recordsTable(rows, { preview = false, filtered = false } = {}) {
     if (!rows.length) return `<div class="empty-state">${icon("calendar")}<strong>${filtered ? "Nenhum registro nesta situação." : "Nenhum registro por aqui."}</strong><span>${filtered ? "Escolha outra situação ou outro mês para consultar." : preview ? "Não há células válidas para importar." : "Registre seu ponto ou importe seu histórico do Excel."}</span></div>`;

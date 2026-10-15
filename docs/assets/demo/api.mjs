@@ -1,7 +1,12 @@
-import { journeyDemo } from "./journey.mjs?v=phase2-finish-1";
-import { provenanceDemo } from "./provenance.mjs?v=phase2-finish-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=phase2-finish-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=phase2-finish-1";
+import { journeyDemo } from "./journey.mjs?v=phases34-1";
+import { provenanceDemo } from "./provenance.mjs?v=phases34-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=phases34-1";
+import { createHrDemo } from "./hr.mjs?v=phases34-1";
+import { createDevelopmentDemo } from "./development.mjs?v=phases34-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=phases34-1";
+const hrDemo = createHrDemo({peopleDemo});
+const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
+  journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
 const MONTHS = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, MAIO: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
 const LABELS = { recorded: "Registrado", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 let loggedIn = false, preview = null;
@@ -175,6 +180,8 @@ async function demoApi(action, { data = null, query = "" } = {}) {
   if (action === "demo-persona") return {user:peopleDemo.select(data?.uid)};
   if (action.startsWith("admin-") && peopleDemo.sessionUser().role !== "admin") error("Acesso restrito ao administrador.",403);
   if (action.startsWith("people-")) return peopleDemo.request(action,{data:data||{},query});
+  if (action.startsWith("hr-")) return hrDemo.request(action,{data:data||{},query});
+  if (action.startsWith("development-")) return developmentDemo.request(action,{data:data||{},query});
   const context = { data: data || {}, query, dateNow, days, parseCell, actorUid:peopleDemo.sessionUser().uid };
   const users = () => journeyDemo("admin-users", { ...context, actorUid:"presentation", query: "" }).users;
   const registry = provenanceDemo(action, { ...context, ...["admin-registry", "admin-registry-save", "admin-record-provenance", "record-provenance"].includes(action) ? { users: users() } : {} });

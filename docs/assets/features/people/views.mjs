@@ -1,5 +1,5 @@
-import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=phase2-finish-1';
-import { options, roleNames, workModes, eventTypes, documentCategories, personCard, peopleTable, timeline, documentTable } from './presentation.mjs?v=phase2-finish-1';
+import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=phases34-1';
+import { options, roleNames, workModes, eventTypes, documentCategories, personCard, peopleTable, timeline, documentTable } from './presentation.mjs?v=phases34-1';
 
 export function profileView(profile, capabilities, tab, rows, { isSelf, actorUid, today, filter, archived, focusedId, nextOffset }) {
   const canCreateEvent = capabilities.canCreateEvent;

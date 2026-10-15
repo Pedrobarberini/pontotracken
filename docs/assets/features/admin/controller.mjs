@@ -1,6 +1,6 @@
-import { createProvenance } from "../history/provenance.mjs?v=phase2-finish-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=phase2-finish-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=phase2-finish-1";
+import { createProvenance } from "../history/provenance.mjs?v=phases34-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=phases34-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=phases34-1";
 const labels = { pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {

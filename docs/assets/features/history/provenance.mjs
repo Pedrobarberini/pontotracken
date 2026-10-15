@@ -1,5 +1,5 @@
-import { escapeHTML as escape } from "../../shared/dom.mjs?v=phase2-finish-1";
-import { formatInstant } from "../../shared/formatters.mjs?v=phase2-finish-1";
+import { escapeHTML as escape } from "../../shared/dom.mjs?v=phases34-1";
+import { formatInstant } from "../../shared/formatters.mjs?v=phases34-1";
 const labels = { recorded: "Marcações", weekend: "Fim de semana", medical: "Atestado", not_applicable: "Não se aplica" };
 function describeState(state) {
   if (!state) return "Sem registro";

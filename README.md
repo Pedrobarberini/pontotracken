@@ -2,7 +2,9 @@
 
 Interface de controle de jornada, com cadastro e login Firebase, importação de Excel e gestão da equipe. Inclui fichas individuais, histórico, documentos privados, confirmação de leitura e perfis de Colaborador, Gestor, RH e ADMIN.
 
-Pendências abrem o documento ou registro exato; cadastros incompletos podem ser filtrados. Termos em PDF são gerados sob demanda, sem confirmar leitura ou assinatura automaticamente. Os anexos recebem inspeção local de formato no backend, que não substitui um serviço de antivírus.
+As fases 3 e 4 incluem férias e ausências com saldo manual e análise, calendário, checklists de admissão/desligamento, conversas 1:1, ciclos de avaliação, PDI e indicadores operacionais. Os períodos encerrados fora da escala são apurados como extras; ocorrências aprovadas permanecem separadas. Treinamentos e controle de ativos não fazem parte desta entrega.
+
+A demonstração usa dados fictícios em memória e reinicia ao atualizar. Na área autenticada, os registros persistem no backend. A preparação jurídica permanece isolada e desativada.
 
 Acesse: https://pedrobarberini.github.io/pontotracken/
 

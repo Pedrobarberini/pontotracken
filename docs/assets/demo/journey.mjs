@@ -1,4 +1,5 @@
-import { calendarContext, enrichCalendar, projectMonth, calendarSummary } from "../calendar.mjs?v=phase2-finish-1";
+import { calendarContext, enrichCalendar, projectMonth, calendarSummary } from "../calendar.mjs?v=phases34-1";
+import { journeyMetrics } from "../vendor/journey-metrics.mjs?v=phases34-1";
 const labels = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const baseSchedule = { start_time: "09:00", end_time: "16:00", break_minutes: 0, expected_minutes: 420, tolerance_minutes: 5, weekdays: "[1,2,3,4,5]", version: 1, effective_date: "2020-01-01" };
 function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
@@ -14,6 +15,24 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
     return hour * 3600 + minute * 60 + second;
   };
   const decorateDay = (row) => ({ ...row, version: row.version || 1, minutes: Math.floor(row.times.reduce((sum, time, index) => index % 2 ? sum + seconds(time) - seconds(row.times[index - 1]) : sum, 0) / 60), incomplete: row.times.length % 2 === 1, label: row.times.length % 2 ? "Em aberto" : { recorded: "Registrado", weekend: "Fim de semana", medical: "Atestado", not_applicable: "Não se aplica" }[row.status] });
+  function workRecords(user, month, today, days) {
+    if (user.uid === 'presentation') return [...days.values()].filter((row) => row.date.startsWith(month + '-')).map(decorateDay);
+    if (user.status !== 'active') return [];
+    const candidates = [];
+    const last = new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate();
+    for (let day = 1; day <= last; day++) {
+      const date = month + '-' + String(day).padStart(2, '0');
+      if (date < today && calendarContext(date, [baseSchedule]).calendarKind === 'regular') candidates.push(date);
+    }
+    const rows = candidates.slice(-5).map((date, index) => decorateDay({
+      date, status: 'recorded', source: 'demo',
+      times: [user.uid === 'bruno' && index === 0 ? '09:12' : '09:00', user.uid === 'ana' && index === 0 ? '17:15' : '16:00'],
+    }));
+    if (today.startsWith(month + '-')) rows.push(decorateDay({
+      date: today, status: 'recorded', source: 'demo', times: ['09:00'],
+    }));
+    return rows;
+  }
   const fail = (message, status = 400) => {
     const e = new Error(message);
     e.status = status;
@@ -43,6 +62,26 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
     if (action.startsWith("admin-") && actor.role !== "admin") fail("Acesso restrito ao administrador.", 403);
     const params = new URLSearchParams(query.replace(/^&/, "")), month = params.get("month") || dateNow().slice(0, 7), offset = Number(params.get("offset") || 0);
     if (action === "demo-calendar") return { schedules: schedules.get(actorUid) || [] };
+    if (action === 'demo-attendance-report') {
+      const { from, to } = data;
+      const validDate = (value) => typeof value === 'string' && /^20\d{2}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value + 'T12:00:00Z')) && new Date(value + 'T12:00:00Z').toISOString().slice(0, 10) === value;
+      if (!validDate(from) || !validDate(to) || to < from || (Date.parse(to) - Date.parse(from)) / 86400000 > 366 || !Array.isArray(data.people) || data.people.length > 1001) fail('Período ou pessoas inválidos para o relatório demonstrativo.');
+      const scoped = new Map(data.people.filter(person => person && typeof person.uid === 'string').map(person => [person.uid, person]));
+      const report = { attendance: [], schedules: [], people: [] };
+      for (const user of users.filter(person => person.status === 'active' && scoped.has(person.uid))) {
+        const person = scoped.get(user.uid);
+        if (person.status && person.status !== 'active') continue;
+        report.people.push({ uid: user.uid, name: user.name, status: 'active', department: person.department || '' });
+        report.schedules.push(...(schedules.get(user.uid) || []).filter(schedule => schedule.effective_date <= to).map(schedule => ({ ...schedule })));
+        const cursor = new Date(from.slice(0, 7) + '-01T12:00:00Z');
+        while (cursor.toISOString().slice(0, 10) <= to) {
+          const workMonth = cursor.toISOString().slice(0, 7);
+          report.attendance.push(...workRecords(user, workMonth, dateNow(), days).filter(row => row.date >= from && row.date <= to).map(row => ({ uid: user.uid, date: row.date, status: row.status, times: [...row.times], department: person.department || '' })));
+          cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+        }
+      }
+      return report;
+    }
     let mutationKey = null, signature = null;
     if ((action.startsWith("overtime-") || action === "admin-overtime-review") && data.requestId !== void 0) {
       if (typeof data.requestId !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(data.requestId)) fail("Identificador de envio inválido.");
@@ -66,7 +105,10 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       Object.assign(p, { activity: data.activity || p.activity, last_seen: now() });
       return { ...p, label: labels[p.activity], serverTime: now() };
     }
-    if (action === "journey") return { rows: overtime.filter((row) => row.uid === actorUid && (row.work_date.startsWith(month) || row.status === "running")).map((row) => decorate(row, actorUid)), approvers: publicApprovers(actorUid), schedule: schedules.get(actorUid).at(-1), presence: presence.get(actorUid), serverTime: now() };
+    if (action === "journey") {
+      const own = schedules.get(actorUid);
+      return { rows: overtime.filter((row) => row.uid === actorUid && (row.work_date.startsWith(month) || row.status === "running")).map((row) => decorate(row, actorUid)), approvers: publicApprovers(actorUid), schedule: own.filter((row) => row.effective_date <= dateNow()).at(-1) || null, metrics: journeyMetrics(projectMonth(workRecords(actor, month, dateNow(), days), month, own, dateNow()), own), presence: presence.get(actorUid), serverTime: now() };
+    }
     if (["overtime-register", "overtime-start"].includes(action)) {
       const reason = text(data.reason, 15, 1e3, "Explique por que o trabalho foi fora do horário, de 15 a 1.000 caracteres.");
       const requestedBy = text(data.requestedBy, 2, 180, "Informe quem solicitou o trabalho.");
@@ -116,13 +158,12 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
     }
     if (action === "admin-team") {
       const q = (params.get("q") || "").toLowerCase(), matches = users.filter((u) => (u.name + " " + u.email).toLowerCase().includes(q));
-      return { users: matches.slice(offset, offset + 50).map((u, i) => {
-        const p = presence.get(u.uid), own = schedules.get(u.uid), approved = overtime.filter((r) => r.uid === u.uid && r.work_date.startsWith(month)), calendar = calendarSummary(projectMonth(u.uid === "presentation" ? [...days.values()].map(decorateDay) : [], month, own, dateNow())), current = u.uid === "presentation" ? days.get(dateNow()) || null : u.status === "active" ? { date: dateNow(), status: "recorded", times: [u.uid === "bruno" ? "09:12" : "09:00"], source: "demo", incomplete: true, label: "Em aberto" } : null;
-        return { ...u, activity: p.activity, activityLabel: labels[p.activity], online: u.status === "active" && p.activity !== "offline", lastSeen: p.last_seen, schedule: own.at(-1), schedules: own, today: current ? enrichCalendar(decorateDay(current), own) : null, todayContext: calendarContext(dateNow(), own), metrics: { holidayWorkedMinutes: calendar.holidayWorkedMinutes, offScheduleWorkedMinutes: calendar.offScheduleWorkedMinutes, weekendOffScheduleWorkedMinutes: calendar.weekendOffScheduleWorkedMinutes, minutes: u.uid === "presentation" ? [...days.values()].filter((r) => r.date.startsWith(month)).reduce((s, r) => {
-          for (let j = 0; j + 1 < r.times.length; j += 2) s += Number(r.times[j + 1].slice(0, 2)) * 60 + Number(r.times[j + 1].slice(3, 5)) - (Number(r.times[j].slice(0, 2)) * 60 + Number(r.times[j].slice(3, 5)));
-          return s;
-        }, 0) : u.status === "active" ? 2100 : 0, lateMinutes: u.uid === "bruno" ? 12 : 0, extraMinutes: u.uid === "ana" ? 75 : 0, incomplete: u.uid === "presentation" ? [...days.values()].filter((r) => r.date.startsWith(month) && r.status === "recorded" && r.times.length % 2 === 1).length : u.status === "active" ? 1 : 0, scheduledDays: u.status === "active" ? 5 : 0 }, overtime: ["pending", "approved", "rejected", "running"].map((status) => ({ status, minutes: approved.filter((r) => r.status === status).reduce((s, r) => s + decorate(r).minutes, 0) })) };
-      }), nextOffset: null, serverTime: now() };
+      return { users: matches.slice(offset, offset + 50).map((u) => {
+        const p = presence.get(u.uid), own = schedules.get(u.uid), approved = overtime.filter((r) => r.uid === u.uid && r.work_date.startsWith(month));
+        const records = workRecords(u, month, dateNow(), days);
+        const current = workRecords(u, dateNow().slice(0, 7), dateNow(), days).find((row) => row.date === dateNow()) || null;
+        return { ...u, activity: p.activity, activityLabel: labels[p.activity], online: u.status === "active" && p.activity !== "offline", lastSeen: p.last_seen, schedule: own.filter((row) => row.effective_date <= dateNow()).at(-1) || null, schedules: own, today: current ? enrichCalendar(current, own) : null, todayContext: calendarContext(dateNow(), own), metrics: journeyMetrics(projectMonth(records, month, own, dateNow()), own), overtime: ["pending", "approved", "rejected", "running"].map((status) => ({ status, minutes: approved.filter((r) => r.status === status).reduce((s, r) => s + decorate(r).minutes, 0) })) };
+      }), nextOffset: matches.length > offset + 50 ? offset + 50 : null, serverTime: now() };
     }
     if (action === "admin-schedule") {
       const own = schedules.get(data.uid), before = own.find((s) => s.effective_date === data.effectiveDate);
@@ -169,7 +210,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
     if (action === "admin-records") {
       const uid = params.get("uid"), user = users.find((u) => u.uid === uid);
       if (!user) fail("Funcionário não encontrado.", 404);
-      const rows = projectMonth([...days.values()].filter((row) => row.date.startsWith(month)).map(decorateDay), month, schedules.get(uid) || [], dateNow());
+      const rows = projectMonth(workRecords(user, month, dateNow(), days), month, schedules.get(uid) || [], dateNow());
       return { user, rows, summary: calendarSummary(rows) };
     }
     if (action === "admin-correct") {
