@@ -1,4 +1,4 @@
-import { createAdmin } from "./features/admin/controller.mjs?v=overtime-total-1";
+import { createAdmin } from "./features/admin/controller.mjs?v=admin-overtime-top-1";
 export {
   createAdmin
 };

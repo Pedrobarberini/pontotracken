@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#68b42e"><meta name="description" content="Registre seu ponto e consulte suas marcações em um só lugar.">
   <title>PontoTracken · Sua jornada em dia</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=overtime-total-1">
-  <script type="module" src="assets/app.js?v=overtime-total-1"></script>
+  <link rel="stylesheet" href="assets/style.css?v=admin-overtime-top-1">
+  <script type="module" src="assets/app.js?v=admin-overtime-top-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title">Ponto<strong>Track<span>en</span></strong></p><p class="boot-copy">Carregando seu ponto…</p></div>
@@ -115,7 +115,9 @@
         <section id="admin-panel-records" class="admin-panel" hidden>
           <form id="admin-record-filter" class="admin-toolbar"><div class="admin-field grow"><label for="admin-record-search">Buscar nome ou e-mail</label><input id="admin-record-search" type="search" placeholder="Buscar na equipe" maxlength="180"></div><button class="button secondary" type="submit">Buscar funcionário</button></form>
           <div class="admin-toolbar"><div class="admin-field grow"><label for="admin-employee">Funcionário</label><select id="admin-employee"><option value="">Selecione um funcionário</option></select></div><div class="admin-field"><label for="admin-month">Mês do ponto</label><input id="admin-month" type="month"></div><button id="admin-add-record" class="button primary" disabled>Adicionar dia</button></div>
-          <div id="admin-record-summary" class="admin-description"></div><div class="history-card" id="admin-records-table"><div class="empty-state">Selecione um funcionário para consultar e corrigir o ponto.</div></div>
+          <div id="admin-record-summary" class="admin-description"></div>
+          <div id="admin-calendar-summary" class="calendar-summary" aria-live="polite"></div>
+          <div class="history-card" id="admin-records-table"><div class="empty-state">Selecione um funcionário para consultar e corrigir o ponto.</div></div>
           <p class="footnote">Cada ajuste exige justificativa. O registro anterior e o ADMIN responsável ficam no histórico de alterações.</p>
         </section>
         <section id="admin-panel-history" class="admin-panel" hidden>

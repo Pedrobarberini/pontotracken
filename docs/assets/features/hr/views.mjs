@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=overtime-total-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=admin-overtime-top-1';
 export const typeNames={vacation:'Férias',day_off:'Folga',other:'Ausência pessoal'};
 export const statusNames={pending:'Pendente',approved:'Aprovada',rejected:'Não aprovada',cancelled:'Cancelada',open:'Em andamento',closed:'Encerrado',completed:'Concluída'};
 export const dateLabel=value=>value?new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';

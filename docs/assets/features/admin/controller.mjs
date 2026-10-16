@@ -1,6 +1,6 @@
-import { createProvenance } from "../history/provenance.mjs?v=overtime-total-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=overtime-total-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=overtime-total-1";
+import { createProvenance } from "../history/provenance.mjs?v=admin-overtime-top-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=admin-overtime-top-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=admin-overtime-top-1";
 const labels = { pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
@@ -75,6 +75,7 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
     selected = null;
     $("#admin-add-record").disabled = true;
     $("#admin-record-summary").textContent = "";
+    $("#admin-calendar-summary").innerHTML = "";
     if (!uid) {
       $("#admin-records-table").innerHTML = '<div class="empty-state">Selecione um funcionário para consultar e corrigir o ponto.</div>';
       return;
@@ -85,10 +86,12 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
       if (generation !== epoch) return;
       selected = result.user;
       records = result.rows;
+      $("#admin-calendar-summary").innerHTML = result.summary ? calendarTotals(result.summary, hours) : "";
       $("#admin-add-record").disabled = false;
       $("#admin-record-summary").textContent = `${selected.name} · ${records.filter((row) => row.times.length).length} dias com ponto · ${hours(records.reduce((n, row) => n + row.minutes, 0))}`;
-      $("#admin-records-table").innerHTML = records.length ? `<div class="table-scroll"><table class="records-table"><thead><tr><th>Data</th><th>Marcações / ocorrência</th><th>Horas</th><th>Origem</th><th>Ajuste</th></tr></thead><tbody>${records.map((row) => `<tr><td>${esc(formatDate(row.date))}${recordStatus(row)}</td><td class="times">${row.times.length ? esc(recordText(row)) : "—"}${row.incomplete ? '<span class="admin-email">Saída em aberto</span>' : ""}</td><td>${row.times.length ? hours(row.minutes) : "—"}</td><td><span class="source-label">${sourceLabel(row)}</span></td><td><button class="text-button" data-correct-date="${row.date}">${row.virtual ? "Adicionar marcação" : "Corrigir"}</button></td></tr>`).join("")}</tbody></table></div>${result.summary ? `<div class="calendar-summary">${calendarTotals(result.summary, hours)}</div>` : ""}` : '<div class="empty-state"><strong>Nenhum registro neste mês.</strong><span>Use Adicionar dia para registrar um ponto ausente, com justificativa.</span></div>';
+      $("#admin-records-table").innerHTML = records.length ? `<div class="table-scroll"><table class="records-table"><thead><tr><th>Data</th><th>Marcações / ocorrência</th><th>Horas</th><th>Origem</th><th>Ajuste</th></tr></thead><tbody>${records.map((row) => `<tr><td>${esc(formatDate(row.date))}${recordStatus(row)}</td><td class="times">${row.times.length ? esc(recordText(row)) : "—"}${row.incomplete ? '<span class="admin-email">Saída em aberto</span>' : ""}</td><td>${row.times.length ? hours(row.minutes) : "—"}</td><td><span class="source-label">${sourceLabel(row)}</span></td><td><button class="text-button" data-correct-date="${row.date}">${row.virtual ? "Adicionar marcação" : "Corrigir"}</button></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><strong>Nenhum registro neste mês.</strong><span>Use Adicionar dia para registrar um ponto ausente, com justificativa.</span></div>';
     } catch (error) {
+      if (generation !== epoch) return;
       report(error);
       $("#admin-records-table").innerHTML = '<div class="empty-state">Não foi possível carregar o ponto. Selecione novamente o funcionário.</div>';
     }
@@ -279,7 +282,7 @@ function createAdmin({ api, busy, toast, formatDate, hours, currentMonth, curren
     correction = null;
     usersOffset = historyOffset = 0;
     provenance.reset();
-    for (const id of ["admin-users-table", "admin-records-table", "admin-history-list"]) $("#" + id).innerHTML = "";
+    for (const id of ["admin-users-table", "admin-records-table", "admin-history-list", "admin-record-summary", "admin-calendar-summary"]) $("#" + id).innerHTML = "";
     chooseOptions([]);
     for (const id of ["admin-access-dialog", "admin-correction-dialog"]) $("#" + id).close();
     showTab("team", { load: false, scroll: false, notify: false });

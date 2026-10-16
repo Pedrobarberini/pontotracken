@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=overtime-total-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-overtime-top-1";
 function calendarLabel(row) {
   if (!row) return "";
   const kind = row.calendarKind ?? (row.status === "weekend" ? "weekend" : "regular");

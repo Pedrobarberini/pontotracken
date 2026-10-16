@@ -133,7 +133,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
   function download(id) {const document=accessItem(documents,id);return {blob:files.get(id),filename:document.filename};}
   async function downloadTerm(id) {
     const requestedActor=actorUid,event=accessItem(events,id),profile=target(event.uid);
-    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=overtime-total-1');
+    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=admin-overtime-top-1');
     const bytes=await generateTermPdf({employee:{name:profile.name,employeeNumber:profile.employeeNumber,jobTitle:profile.jobTitle,department:profile.department},event:{id:event.id,type:event.type,title:event.title,content:event.content,occurredOn:event.occurredOn,createdByName:event.createdByName,createdAt:event.createdAt,version:event.version,status:event.status,archivedAt:event.archivedAt,archiveReason:event.archiveReason},generatedAt:now(),demonstration:true});
     if(actorUid!==requestedActor)fail('A sessão demonstrativa mudou. Gere o termo novamente.',403);
     accessItem(events,id);

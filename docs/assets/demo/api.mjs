@@ -1,10 +1,10 @@
-import { journeyDemo } from "./journey.mjs?v=overtime-total-1";
-import { provenanceDemo } from "./provenance.mjs?v=overtime-total-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=overtime-total-1";
-import { createHrDemo } from "./hr.mjs?v=overtime-total-1";
-import { createDevelopmentDemo } from "./development.mjs?v=overtime-total-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=overtime-total-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=overtime-total-1";
+import { journeyDemo } from "./journey.mjs?v=admin-overtime-top-1";
+import { provenanceDemo } from "./provenance.mjs?v=admin-overtime-top-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=admin-overtime-top-1";
+import { createHrDemo } from "./hr.mjs?v=admin-overtime-top-1";
+import { createDevelopmentDemo } from "./development.mjs?v=admin-overtime-top-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=admin-overtime-top-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=admin-overtime-top-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});

@@ -1,6 +1,6 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=overtime-total-1";
-import { $, busy } from "../../shared/dom.mjs?v=overtime-total-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=overtime-total-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=admin-overtime-top-1";
+import { $, busy } from "../../shared/dom.mjs?v=admin-overtime-top-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=admin-overtime-top-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
   const { firebaseAuth } = createFirebaseIdentity(state);
   function loginExchange() {
