@@ -1,5 +1,5 @@
-import {$,$$,escapeHTML as e} from '../../shared/dom.mjs?v=phases34-1';
-import {absencesView,lifecycleView,dialogForm,reasonField,options,typeNames,dateLabel} from './views.mjs?v=phases34-1';
+import {$,$$,escapeHTML as e} from '../../shared/dom.mjs?v=overtime-total-1';
+import {absencesView,lifecycleView,dialogForm,reasonField,options,typeNames,dateLabel} from './views.mjs?v=overtime-total-1';
 
 export function createHR({state,api,busy,toast}) {
   let generation=0,identity=0,view='',result=null;

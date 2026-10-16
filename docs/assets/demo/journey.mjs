@@ -1,5 +1,5 @@
-import { calendarContext, enrichCalendar, projectMonth, calendarSummary } from "../calendar.mjs?v=phases34-1";
-import { journeyMetrics } from "../vendor/journey-metrics.mjs?v=phases34-1";
+import { calendarContext, enrichCalendar, projectMonth } from "../calendar.mjs?v=overtime-total-1";
+import { journeyMetrics, attendanceSummary } from "../vendor/journey-metrics.mjs?v=overtime-total-1";
 const labels = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const baseSchedule = { start_time: "09:00", end_time: "16:00", break_minutes: 0, expected_minutes: 420, tolerance_minutes: 5, weekdays: "[1,2,3,4,5]", version: 1, effective_date: "2020-01-01" };
 function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
@@ -211,7 +211,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       const uid = params.get("uid"), user = users.find((u) => u.uid === uid);
       if (!user) fail("Funcionário não encontrado.", 404);
       const rows = projectMonth(workRecords(user, month, dateNow(), days), month, schedules.get(uid) || [], dateNow());
-      return { user, rows, summary: calendarSummary(rows) };
+      return { user, rows, summary: attendanceSummary(rows, schedules.get(user.uid) || []) };
     }
     if (action === "admin-correct") {
       const before = data.uid === "presentation" ? days.get(data.date) : null;

@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=phases34-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=overtime-total-1";
 function calendarLabel(row) {
   if (!row) return "";
   const kind = row.calendarKind ?? (row.status === "weekend" ? "weekend" : "regular");
@@ -22,7 +22,11 @@ function sourceLabel(row) {
   return { calendar: "Calendário", import: "Planilha", live: "Site", demo: "Exemplo", admin: "Ajuste ADMIN" }[row?.source] || "Planilha";
 }
 function calendarTotals(summary = {}, hours) {
-  return `${[["Em feriados", summary.holidayWorkedMinutes], ["Fora da escala", summary.offScheduleWorkedMinutes], ["FDS fora da escala", summary.weekendOffScheduleWorkedMinutes]].map(([label, value]) => `<div><span>${label}</span><strong>${hours(Number(value) || 0)}</strong></div>`).join("")}<p class="field-hint">Feriado e dia fora da escala podem coincidir. As horas do total geral são contadas uma única vez. Estes indicadores não calculam adicionais nem valores de pagamento.</p>`;
+  const knownTotal = Number.isFinite(summary.extraMinutes);
+  const pending = Number(summary.unclassifiedDays) || 0;
+  const value = knownTotal ? hours(summary.extraMinutes) : "A classificar";
+  const note = pending ? ` Ainda a classificar: ${hours(Number(summary.unclassifiedMinutes) || 0)} em ${pending} ${pending === 1 ? "dia" : "dias"} sem escala válida.` : "";
+  return `<div><span>Horas extras</span><strong>${value}</strong></div><p class="field-hint">Inclui períodos antes e depois da jornada e trabalho em feriados ou dias fora da escala, sem duplicar horas.${note}</p>`;
 }
 function todayCalendarNote(context = {}) {
   if (context.calendarKind === "holiday") return `Hoje é feriado nacional${context.holidayName ? ": " + context.holidayName : "."}${context.holidayName ? "." : ""} Se trabalhar, registre o ponto normalmente; as horas ficam destacadas no espelho.`;

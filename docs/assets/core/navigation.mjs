@@ -1,4 +1,4 @@
-import { $, $$ } from "../shared/dom.mjs?v=phases34-1";
+import { $, $$ } from "../shared/dom.mjs?v=overtime-total-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {

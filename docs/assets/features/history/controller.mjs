@@ -1,5 +1,5 @@
-import { $ } from "../../shared/dom.mjs?v=phases34-1";
-import { calendarTotals } from "../calendar/presentation.mjs?v=phases34-1";
+import { $ } from "../../shared/dom.mjs?v=overtime-total-1";
+import { calendarTotals } from "../calendar/presentation.mjs?v=overtime-total-1";
 function createHistory({ state, api, download, hours, recordsTable, showDataError }) {
   async function loadHistory() {
     if (!state.session?.user) return;

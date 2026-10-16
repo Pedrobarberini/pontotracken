@@ -1,9 +1,10 @@
-import { journeyDemo } from "./journey.mjs?v=phases34-1";
-import { provenanceDemo } from "./provenance.mjs?v=phases34-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=phases34-1";
-import { createHrDemo } from "./hr.mjs?v=phases34-1";
-import { createDevelopmentDemo } from "./development.mjs?v=phases34-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarSummary, calendarFilters, calendarCsv } from "../calendar.mjs?v=phases34-1";
+import { journeyDemo } from "./journey.mjs?v=overtime-total-1";
+import { provenanceDemo } from "./provenance.mjs?v=overtime-total-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=overtime-total-1";
+import { createHrDemo } from "./hr.mjs?v=overtime-total-1";
+import { createDevelopmentDemo } from "./development.mjs?v=overtime-total-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=overtime-total-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=overtime-total-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
@@ -216,7 +217,7 @@ async function demoApi(action, { data = null, query = "" } = {}) {
     if (!calendarFilters.includes(status)) error("Situação inválida.");
     const schedules = journeyDemo("demo-calendar", context).schedules;
     const rows = projectMonth([...days.values()].map(decorate), month, schedules, dateNow()).filter((row) => matchesCalendarFilter(row, status));
-    return { rows, today: days.has(dateNow()) ? enrichCalendar(decorate(days.get(dateNow())), schedules) : null, todayContext: calendarContext(dateNow(), schedules), summary: calendarSummary(rows) };
+    return { rows, today: days.has(dateNow()) ? enrichCalendar(decorate(days.get(dateNow())), schedules) : null, todayContext: calendarContext(dateNow(), schedules), summary: attendanceSummary(rows, schedules) };
   }
   if (action === "punch") {
     const schedules = journeyDemo("demo-calendar", context).schedules;

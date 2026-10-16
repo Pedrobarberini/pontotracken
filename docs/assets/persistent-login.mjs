@@ -1,4 +1,4 @@
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./core/auth/persistent-login.mjs?v=phases34-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./core/auth/persistent-login.mjs?v=overtime-total-1";
 export {
   exchangeFirebaseLogin,
   restoreFirebaseLogin
