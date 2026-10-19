@@ -1,4 +1,4 @@
-import { $, $$ } from "../shared/dom.mjs?v=admin-overtime-top-1";
+import { $, $$ } from "../shared/dom.mjs?v=demand-notices-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {

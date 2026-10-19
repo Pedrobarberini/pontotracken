@@ -1,5 +1,5 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-overtime-top-1";
-import { formatInstant } from "../../shared/formatters.mjs?v=admin-overtime-top-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=demand-notices-1";
+import { formatInstant } from "../../shared/formatters.mjs?v=demand-notices-1";
 function createOvertimePresentation({ hours, getUser, statusNames }) {
   const when = (value) => formatInstant(value, "short");
   const legacy = (row) => row.requested_work == null;

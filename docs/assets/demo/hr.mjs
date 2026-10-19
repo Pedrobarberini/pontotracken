@@ -1,3 +1,5 @@
+import {findDemandWarnings} from '../vendor/hr-planning.mjs?v=demand-notices-1';
+import {createPlanningNoticeDemo} from './planning-notices.mjs?v=demand-notices-1';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const text=(value,min,max)=>{if(typeof value!=='string'||value.trim().length<min||value.trim().length>max)fail('Preencha os campos e descreva o motivo (mínimo 10 caracteres).');return value.trim();};
 const date=value=>{if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T12:00:00Z'))||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)fail('Data inválida.');return value;};
@@ -9,6 +11,7 @@ export function createHrDemo({peopleDemo,clock=()=>new Date()}={}) {
   const absences=new Map(),balances=new Map(),processes=new Map(),operations=new Map();
   const now=()=>new Date(clock()).toISOString(),today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(clock()));
   const month=()=>today().slice(0,7),year=()=>today().slice(0,4),day=n=>month()+'-'+String(n).padStart(2,'0');
+  const planning=createPlanningNoticeDemo({now,today});
   balances.set('demo-hr-balance-ana',{id:'demo-hr-balance-ana',uid:'ana',periodStart:year()+'-01-01',periodEnd:year()+'-12-31',grantedDays:30,version:1});
   absences.set('demo-hr-approved',{id:'demo-hr-approved',uid:'ana',type:'day_off',startOn:day(5),endOn:day(5),days:1,balanceId:null,status:'approved',reason:'Compromisso pessoal planejado.',requestedBy:'ana',reviewedBy:'bruno',reviewReason:'Cobertura da equipe organizada.',version:2,createdAt:now(),updatedAt:now()});
   absences.set('demo-hr-pending',{id:'demo-hr-pending',uid:'ana',type:'vacation',startOn:day(20),endOn:day(24),days:5,balanceId:'demo-hr-balance-ana',status:'pending',reason:'Planejamento de descanso pessoal.',requestedBy:'ana',reviewedBy:null,reviewReason:null,version:1,createdAt:now(),updatedAt:now()});
@@ -29,7 +32,11 @@ export function createHrDemo({peopleDemo,clock=()=>new Date()}={}) {
   async function request(action,{data={},query=''}={}) {
     if(!action.startsWith('hr-'))return null;
     const context=await scope(),params=new URLSearchParams(query.replace(/^&/,'')),personName=uid=>context.people.find(p=>p.uid===uid)?.name||'';
-    const dto=row=>({...structuredClone(row),personName:personName(row.uid)});
+    const notices=planning.active();
+    const dto=row=>({...structuredClone(row),personName:personName(row.uid),...(row.startOn&&row.endOn?{demandWarnings:findDemandWarnings(notices,row.startOn,row.endOn)}:{})});
+    if(action==='hr-notices')return planning.list(context,params.get('status')||'active');
+    if(action==='hr-notice-save')return planning.save(context,data,mutate);
+    if(action==='hr-notice-archive')return planning.archive(context,data,mutate);
     if(action==='hr-state') {
       const selectedMonth=params.get('month')||month();if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(selectedMonth))fail('Mês inválido.');
       const uid=params.get('uid')||'',offset=Number(params.get('offset')||0);if(uid)target(context,uid);if(!Number.isInteger(offset)||offset<0||offset>10000)fail('Página inválida.');
@@ -38,7 +45,7 @@ export function createHrDemo({peopleDemo,clock=()=>new Date()}={}) {
       const page=rows=>({rows:rows.slice(offset,offset+50).map(dto),truncated:rows.length>offset+50,nextOffset:rows.length>offset+50?offset+50:null});
       const b=[...balances.values()].filter(row=>read(row)&&row.periodStart<=last&&row.periodEnd>=first).map(row=>{const linked=[...absences.values()].filter(a=>a.balanceId===row.id),reservedDays=linked.filter(a=>a.status==='approved').reduce((sum,a)=>sum+a.days,0),pendingDays=linked.filter(a=>a.status==='pending').reduce((sum,a)=>sum+a.days,0);return {...dto(row),reservedDays,pendingDays,availableDays:row.grantedDays-reservedDays};});
       const calendar=a.filter(row=>row.status==='approved').map(row=>({id:row.id,uid:row.uid,personName:personName(row.uid),type:row.type,startOn:row.startOn,endOn:row.endOn,days:row.days}));
-      return {scope:context.role,capabilities:{role:context.role,canRequest:true,canManageBalances:context.privileged,canManageProcesses:context.privileged,canReview:context.role!=='employee'},people:context.people.map(({uid,name,status,department,managerUid,role})=>({uid,name,status,department,managerUid,role})),peopleTruncated:false,absences:page(a),balances:b,balancesTruncated:false,processes:page(p),calendar:{month:selectedMonth,rows:calendar.slice(0,200),truncated:calendar.length>200}};
+      return {scope:context.role,capabilities:{role:context.role,canRequest:true,canManageBalances:context.privileged,canManageProcesses:context.privileged,canManageNotices:context.privileged,canReview:context.role!=='employee'},notices:planning.list(context),people:context.people.map(({uid,name,status,department,managerUid,role})=>({uid,name,status,department,managerUid,role})),peopleTruncated:false,absences:page(a),balances:b,balancesTruncated:false,processes:page(p),calendar:{month:selectedMonth,rows:calendar.slice(0,200),truncated:calendar.length>200}};
     }
     if(action==='hr-absence-request') {
       if(data.uid&&data.uid!==context.actor.uid)fail('Solicite apenas para sua conta.',403);target(context,context.actor.uid);

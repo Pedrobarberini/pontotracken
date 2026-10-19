@@ -1,6 +1,6 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=admin-overtime-top-1';
-import { roleNames } from './presentation.mjs?v=admin-overtime-top-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=admin-overtime-top-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=demand-notices-1';
+import { roleNames } from './presentation.mjs?v=demand-notices-1';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=demand-notices-1';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';

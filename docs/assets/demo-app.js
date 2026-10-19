@@ -1,1 +1,1 @@
-import "./app.js?v=admin-overtime-top-1";
+import "./app.js?v=demand-notices-1";

@@ -1,5 +1,5 @@
-import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=admin-overtime-top-1';
-import { options, roleNames, workModes, eventTypes, documentCategories, personCard, peopleTable, timeline, documentTable } from './presentation.mjs?v=admin-overtime-top-1';
+import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=demand-notices-1';
+import { options, roleNames, workModes, eventTypes, documentCategories, personCard, peopleTable, timeline, documentTable } from './presentation.mjs?v=demand-notices-1';
 
 export function profileView(profile, capabilities, tab, rows, { isSelf, actorUid, today, filter, archived, focusedId, nextOffset }) {
   const canCreateEvent = capabilities.canCreateEvent;
