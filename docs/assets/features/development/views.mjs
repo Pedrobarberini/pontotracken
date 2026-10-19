@@ -1,5 +1,5 @@
-import { escapeHTML as e } from '../../shared/dom.mjs?v=demand-notices-1';
-import { localStamp } from './time.mjs?v=demand-notices-1';
+import { escapeHTML as e } from '../../shared/dom.mjs?v=account-management-1';
+import { localStamp } from './time.mjs?v=account-management-1';
 const statusNames = {scheduled:'Agendada',completed:'Concluído',cancelled:'Cancelado',draft:'Rascunho',open:'Aberto',closed:'Encerrado',published:'Publicado'};
 const stamp = value => value ? new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}) : '—';
 const day = value => value ? value.split('-').reverse().join('/') : '—';

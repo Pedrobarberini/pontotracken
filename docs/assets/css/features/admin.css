@@ -73,6 +73,40 @@
   gap: 7px;
   flex-wrap: wrap;
 }
+.admin-delete-action {
+  color: #a82d2d;
+}
+.admin-delete-notice {
+  padding: 14px;
+  margin: 16px 0;
+  border: 1px solid #edc6c1;
+  border-radius: 8px;
+  background: #fff5f3;
+  color: #78332c;
+  font-size: 13px;
+}
+.admin-delete-notice p + p { margin-top: 8px; }
+.button.admin-danger {
+  background: #a82d2d;
+  border-color: #a82d2d;
+  color: #fff;
+}
+.button.admin-danger:hover { background: #8b2424; }
+#admin-delete-person,
+#admin-delete-confirm-email { overflow-wrap: anywhere; }
+.admin-account-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.admin-account-tools h2 { font-size: 18px; }
+#admin-transfer-summary,
+#admin-transfer-source-label,
+#admin-transfer-target-label { overflow-wrap: anywhere; }
+#admin-transfer-verify { margin-top: 14px; }
 .admin-before {
   padding: 12px;
   background: var(--wash);

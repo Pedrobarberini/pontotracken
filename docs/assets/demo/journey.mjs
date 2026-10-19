@@ -1,5 +1,5 @@
-import { calendarContext, enrichCalendar, projectMonth } from "../calendar.mjs?v=demand-notices-1";
-import { journeyMetrics, attendanceSummary } from "../vendor/journey-metrics.mjs?v=demand-notices-1";
+import { calendarContext, enrichCalendar, projectMonth } from "../calendar.mjs?v=account-management-1";
+import { journeyMetrics, attendanceSummary } from "../vendor/journey-metrics.mjs?v=account-management-1";
 const labels = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const baseSchedule = { start_time: "09:00", end_time: "16:00", break_minutes: 0, expected_minutes: 420, tolerance_minutes: 5, weekdays: "[1,2,3,4,5]", version: 1, effective_date: "2020-01-01" };
 function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
@@ -17,7 +17,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
   const decorateDay = (row) => ({ ...row, version: row.version || 1, minutes: Math.floor(row.times.reduce((sum, time, index) => index % 2 ? sum + seconds(time) - seconds(row.times[index - 1]) : sum, 0) / 60), incomplete: row.times.length % 2 === 1, label: row.times.length % 2 ? "Em aberto" : { recorded: "Registrado", weekend: "Fim de semana", medical: "Atestado", not_applicable: "Não se aplica" }[row.status] });
   function workRecords(user, month, today, days) {
     if (user.uid === 'presentation') return [...days.values()].filter((row) => row.date.startsWith(month + '-')).map(decorateDay);
-    if (user.status !== 'active') return [];
+    if (!['active', 'blocked', 'deleted'].includes(user.status)) return [];
     const candidates = [];
     const last = new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate();
     for (let day = 1; day <= last; day++) {
@@ -83,7 +83,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       return report;
     }
     let mutationKey = null, signature = null;
-    if ((action.startsWith("overtime-") || action === "admin-overtime-review") && data.requestId !== void 0) {
+    if ((action.startsWith("overtime-") || action === "admin-overtime-review" || action === "admin-account-delete") && (data.requestId !== void 0 || action === "admin-account-delete")) {
       if (typeof data.requestId !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(data.requestId)) fail("Identificador de envio inválido.");
       mutationKey = actorUid + ":" + action + ":" + data.requestId;
       const fields = Object.entries(data).filter(([key]) => key !== "requestId").sort(([a], [b]) => a.localeCompare(b));
@@ -157,7 +157,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       return result({ record: decorate(row, actorUid) });
     }
     if (action === "admin-team") {
-      const q = (params.get("q") || "").toLowerCase(), matches = users.filter((u) => (u.name + " " + u.email).toLowerCase().includes(q));
+      const q = (params.get("q") || "").toLowerCase(), matches = users.filter((u) => u.status !== "deleted" && (u.name + " " + u.email).toLowerCase().includes(q));
       return { users: matches.slice(offset, offset + 50).map((u) => {
         const p = presence.get(u.uid), own = schedules.get(u.uid), approved = overtime.filter((r) => r.uid === u.uid && r.work_date.startsWith(month));
         const records = workRecords(u, month, dateNow(), days);
@@ -166,6 +166,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       }), nextOffset: matches.length > offset + 50 ? offset + 50 : null, serverTime: now() };
     }
     if (action === "admin-schedule") {
+      if (users.find(user => user.uid === data.uid)?.status === "deleted") fail("A conta foi excluída. O histórico está disponível apenas para consulta.", 409);
       const own = schedules.get(data.uid), before = own.find((s) => s.effective_date === data.effectiveDate);
       if ((before?.version || 0) !== data.version) fail("Atualize a jornada.", 409);
       const total = Number(data.end.slice(0, 2)) * 60 + Number(data.end.slice(3)) - (Number(data.start.slice(0, 2)) * 60 + Number(data.start.slice(3))) - data.breakMinutes;
@@ -197,12 +198,27 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       return result({ record: decorate(row, actorUid) });
     }
     if (action === "admin-users") {
-      const q = (params.get("q") || "").toLowerCase(), rows = users.filter((u) => (u.name + " " + u.email).toLowerCase().includes(q) && (!params.get("status") || u.status === params.get("status")));
-      return { users: rows.slice(offset, offset + 50), counts: Object.fromEntries(["active", "pending", "blocked"].map((s) => [s, users.filter((u) => u.status === s).length])), nextOffset: null };
+      const status = params.get("status") || "";
+      if (!["", "active", "pending", "blocked", "deleted"].includes(status)) fail("Situação de acesso inválida.");
+      const q = (params.get("q") || "").toLowerCase(), rows = users.filter((u) => (u.name + " " + u.email).toLowerCase().includes(q) && (status ? u.status === status : u.status !== "deleted"));
+      return { users: structuredClone(rows.slice(offset, offset + 50)), counts: Object.fromEntries(["active", "pending", "blocked", "deleted"].map((s) => [s, users.filter((u) => u.status === s).length])), nextOffset: rows.length > offset + 50 ? offset + 50 : null };
+    }
+    if (action === "admin-account-delete") {
+      const user = users.find(person => person.uid === data.uid);
+      if (!user) fail("Conta não encontrada.", 404);
+      if (user.uid === actorUid || user.role === "admin") fail("Contas ADMIN são protegidas contra exclusão.", 403);
+      if (user.status === "deleted" || !Number.isInteger(data.version) || user.version !== data.version) fail("A conta foi atualizada. Recarregue os cadastros.", 409);
+      if (typeof data.confirmationEmail !== "string" || data.confirmationEmail !== user.email) fail("Digite exatamente o e-mail da conta para confirmar.");
+      const reason = text(data.reason, 10, 1000, "Informe uma justificativa entre 10 e 1.000 caracteres."), before = { ...user };
+      Object.assign(user, { status: "deleted", version: user.version + 1 });
+      const current = presence.get(user.uid);
+      if (current) Object.assign(current, { activity: "offline", changed_at: now() });
+      audit("account:delete", user, before, reason);
+      return result({ user: { ...user } });
     }
     if (action === "admin-access") {
       const user = users.find((u) => u.uid === data.uid);
-      if (!user || user.role === "admin" || user.version !== data.version) fail("Acesso protegido ou desatualizado.", 409);
+      if (!user || user.role === "admin" || user.status === "deleted" || user.version !== data.version) fail("Acesso protegido ou desatualizado.", 409);
       user.status = data.status;
       user.version++;
       return { user };
@@ -214,6 +230,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       return { user, rows, summary: attendanceSummary(rows, schedules.get(user.uid) || []) };
     }
     if (action === "admin-correct") {
+      if (users.find(user => user.uid === data.uid)?.status === "deleted") fail("A conta foi excluída. O histórico está disponível apenas para consulta.", 409);
       const before = data.uid === "presentation" ? days.get(data.date) : null;
       if (data.uid === "presentation" && (before?.version ?? (before ? 1 : 0)) !== data.version) fail("O registro mudou. Atualize o ponto antes de salvar.", 409);
       const parsed = data.status === "recorded" ? parseCell(data.times.join(" | ")) : { status: data.status, times: [] };

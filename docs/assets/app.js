@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=demand-notices-1";
+import { startApplication } from "./application/bootstrap.mjs?v=account-management-1";
 startApplication();

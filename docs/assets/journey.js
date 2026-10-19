@@ -1,4 +1,4 @@
-import { createJourney } from "./features/journey/controller.mjs?v=demand-notices-1";
+import { createJourney } from "./features/journey/controller.mjs?v=account-management-1";
 export {
   createJourney
 };
