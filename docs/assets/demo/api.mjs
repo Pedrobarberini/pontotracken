@@ -1,10 +1,10 @@
-import { journeyDemo } from "./journey.mjs?v=account-management-1";
-import { provenanceDemo } from "./provenance.mjs?v=account-management-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=account-management-1";
-import { createHrDemo } from "./hr.mjs?v=account-management-1";
-import { createDevelopmentDemo } from "./development.mjs?v=account-management-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=account-management-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=account-management-1";
+import { journeyDemo } from "./journey.mjs?v=admin-roles-1";
+import { provenanceDemo } from "./provenance.mjs?v=admin-roles-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=admin-roles-1";
+import { createHrDemo } from "./hr.mjs?v=admin-roles-1";
+import { createDevelopmentDemo } from "./development.mjs?v=admin-roles-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=admin-roles-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=admin-roles-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
@@ -184,10 +184,7 @@ async function demoApi(action, { data = null, query = "" } = {}) {
   if (action.startsWith("hr-")) return hrDemo.request(action,{data:data||{},query});
   if (action.startsWith("development-")) return developmentDemo.request(action,{data:data||{},query});
   const context = { data: data || {}, query, dateNow, days, parseCell, actorUid:peopleDemo.sessionUser().uid };
-  const users = () => [
-    ...journeyDemo("admin-users", { ...context, actorUid:"presentation", query: "" }).users,
-    ...journeyDemo("admin-users", { ...context, actorUid:"presentation", query: "&status=deleted" }).users
-  ];
+  const users = () => journeyDemo("demo-directory", context).users;
   const registry = provenanceDemo(action, { ...context, ...["admin-registry", "admin-registry-save", "admin-record-provenance", "record-provenance"].includes(action) ? { users: users() } : {} });
   if (registry) return registry;
   const before = action === "admin-correct" ? structuredClone(days.get(data.date) || null) : null;
@@ -207,6 +204,7 @@ async function demoApi(action, { data = null, query = "" } = {}) {
   const journey = journeyDemo(action, context);
   if (journey) {
     if (["admin-account-delete", "admin-access"].includes(action)) peopleDemo.synchronizeAccount(journey.user);
+    if (action === "admin-role") peopleDemo.synchronizeAdministrator(journey.user);
     if (action === "admin-correct") provenanceDemo.observeCorrection({ uid: data.uid, date: data.date, before, after: journey.record, reason: data.reason, users: users() });
     return journey;
   }

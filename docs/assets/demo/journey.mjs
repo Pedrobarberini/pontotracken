@@ -1,11 +1,13 @@
-import { calendarContext, enrichCalendar, projectMonth } from "../calendar.mjs?v=account-management-1";
-import { journeyMetrics, attendanceSummary } from "../vendor/journey-metrics.mjs?v=account-management-1";
+import { calendarContext, enrichCalendar, projectMonth } from "../calendar.mjs?v=admin-roles-1";
+import { journeyMetrics, attendanceSummary } from "../vendor/journey-metrics.mjs?v=admin-roles-1";
 const labels = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const baseSchedule = { start_time: "09:00", end_time: "16:00", break_minutes: 0, expected_minutes: 420, tolerance_minutes: 5, weekdays: "[1,2,3,4,5]", version: 1, effective_date: "2020-01-01" };
 function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
   const now = () => new Date(clock()).toISOString();
   const users = [{ uid: "presentation", name: "Visitante", email: "visitante@exemplo.test", status: "active", role: "admin", version: 0 }, { uid: "ana", name: "Ana Costa", email: "ana@exemplo.test", status: "active", role: "employee", version: 0 }, { uid: "bruno", name: "Bruno Lima", email: "bruno@exemplo.test", status: "active", role: "employee", version: 0 }, { uid: "carla", name: "Carla Sousa", email: "carla@exemplo.test", status: "pending", role: "employee", version: 0 }, { uid: "demo-marina", name: "Marina Alves", email: "marina@exemplo.test", status: "active", role: "admin", version: 0 }, { uid: "demo-rafael", name: "Rafael Melo", email: "rafael@exemplo.test", status: "active", role: "admin", version: 0 }];
   const schedules = new Map(users.map((u) => [u.uid, [{ ...baseSchedule, uid: u.uid }]]));
+  for (const user of users) user.adminRoleVersion = 0;
+  const publicUser = (user, actorUid) => ({...user, canChangeRole: user.status === "active" && user.uid !== actorUid});
   const presence = new Map(users.map((u, i) => [u.uid, { uid: u.uid, activity: ["available", "meeting", "lunch", "offline"][i] || "available", last_seen: now(), changed_at: now() }]));
   const overtime = [], events = [];
   let seeded = false;
@@ -62,6 +64,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
     if (action.startsWith("admin-") && actor.role !== "admin") fail("Acesso restrito ao administrador.", 403);
     const params = new URLSearchParams(query.replace(/^&/, "")), month = params.get("month") || dateNow().slice(0, 7), offset = Number(params.get("offset") || 0);
     if (action === "demo-calendar") return { schedules: schedules.get(actorUid) || [] };
+    if (action === "demo-directory") return {users: users.map(user => publicUser(user, actorUid))};
     if (action === 'demo-attendance-report') {
       const { from, to } = data;
       const validDate = (value) => typeof value === 'string' && /^20\d{2}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value + 'T12:00:00Z')) && new Date(value + 'T12:00:00Z').toISOString().slice(0, 10) === value;
@@ -83,7 +86,7 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       return report;
     }
     let mutationKey = null, signature = null;
-    if ((action.startsWith("overtime-") || action === "admin-overtime-review" || action === "admin-account-delete") && (data.requestId !== void 0 || action === "admin-account-delete")) {
+    if ((action.startsWith("overtime-") || action === "admin-overtime-review" || action === "admin-account-delete" || action === "admin-role") && (data.requestId !== void 0 || ["admin-account-delete", "admin-role"].includes(action))) {
       if (typeof data.requestId !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(data.requestId)) fail("Identificador de envio inválido.");
       mutationKey = actorUid + ":" + action + ":" + data.requestId;
       const fields = Object.entries(data).filter(([key]) => key !== "requestId").sort(([a], [b]) => a.localeCompare(b));
@@ -201,7 +204,21 @@ function createJourneyDemo({ clock = () => /* @__PURE__ */ new Date() } = {}) {
       const status = params.get("status") || "";
       if (!["", "active", "pending", "blocked", "deleted"].includes(status)) fail("Situação de acesso inválida.");
       const q = (params.get("q") || "").toLowerCase(), rows = users.filter((u) => (u.name + " " + u.email).toLowerCase().includes(q) && (status ? u.status === status : u.status !== "deleted"));
-      return { users: structuredClone(rows.slice(offset, offset + 50)), counts: Object.fromEntries(["active", "pending", "blocked", "deleted"].map((s) => [s, users.filter((u) => u.status === s).length])), nextOffset: rows.length > offset + 50 ? offset + 50 : null };
+      return { users: rows.slice(offset, offset + 50).map(user => publicUser(user, actorUid)), counts: Object.fromEntries(["active", "pending", "blocked", "deleted"].map((s) => [s, users.filter((u) => u.status === s).length])), nextOffset: rows.length > offset + 50 ? offset + 50 : null };
+    }
+    if (action === "admin-role") {
+      const user = users.find(person => person.uid === data.uid);
+      if (!user) fail("Conta não encontrada.", 404);
+      if (user.uid === actorUid) fail("Você não pode alterar sua própria permissão de ADMIN.", 409);
+      if (user.status !== "active") fail("Aprove ou reative o acesso da conta antes de alterar a permissão de ADMIN.", 409);
+      if (!Number.isInteger(data.version) || !Number.isInteger(data.roleVersion) || user.version !== data.version || user.adminRoleVersion !== data.roleVersion) fail("A conta foi atualizada. Recarregue os cadastros.", 409);
+      if (!["admin", "employee"].includes(data.role)) fail("Permissão inválida.");
+      if (data.role === user.role) fail("Esta conta já possui a permissão selecionada.", 409);
+      if (typeof data.confirmationEmail !== "string" || data.confirmationEmail !== user.email) fail("Digite exatamente o e-mail da conta para confirmar.");
+      const reason = text(data.reason, 10, 1000, "Informe uma justificativa entre 10 e 1.000 caracteres."), before = {...user};
+      Object.assign(user, {role: data.role, adminRoleVersion: user.adminRoleVersion + 1, version: user.version + 1});
+      audit(data.role === "admin" ? "administrator:grant" : "administrator:revoke", user, before, reason);
+      return result({user: publicUser(user, actorUid)});
     }
     if (action === "admin-account-delete") {
       const user = users.find(person => person.uid === data.uid);

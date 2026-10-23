@@ -1,9 +1,10 @@
-import { createProvenance } from "../history/provenance.mjs?v=account-management-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=account-management-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=account-management-1";
-import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=account-management-1";
-import { createAccountDeletion } from "./account-deletion-controller.mjs?v=account-management-1";
-import { createAccountTransfer } from "./account-transfer-controller.mjs?v=account-management-1";
+import { createProvenance } from "../history/provenance.mjs?v=admin-roles-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=admin-roles-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=admin-roles-1";
+import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=admin-roles-1";
+import { createAccountDeletion } from "./account-deletion-controller.mjs?v=admin-roles-1";
+import { createAccountTransfer } from "./account-transfer-controller.mjs?v=admin-roles-1";
+import { createAccountRole } from "./account-role-controller.mjs?v=admin-roles-1";
 const labels = { ...accountLabels, recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
@@ -18,6 +19,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     if (selected?.uid === user.uid) await loadRecords();
   } });
   const transfer = createAccountTransfer({api, getUser: () => state?.session?.user});
+  const accountRole = createAccountRole({api, toast, getUser: () => state?.session?.user, onChanged: () => users()});
   const report = (error) => {
     $("#admin-error").textContent = error.message;
     $("#admin-error").hidden = false;
@@ -186,9 +188,10 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     }
   };
   $("#admin-users-table").onclick = (event) => {
-    const action = event.target.closest("[data-access-uid]"), record = event.target.closest("[data-records-uid]"), remove = event.target.closest("[data-delete-account-uid]");
+    const action = event.target.closest("[data-access-uid]"), record = event.target.closest("[data-records-uid]"), remove = event.target.closest("[data-delete-account-uid]"), role = event.target.closest("[data-role-account-uid]");
     if (action) openAccess(action.dataset.accessUid, action.dataset.status);
     if (remove) deletion.open(team.find(person => person.uid === remove.dataset.deleteAccountUid));
+    if (role) accountRole.open(team.find(person => person.uid === role.dataset.roleAccountUid));
     if (record) {
       $("#admin-employee").value = record.dataset.recordsUid;
       showTab("records");
@@ -300,6 +303,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     provenance.reset();
     deletion.reset();
     transfer.reset();
+    accountRole.reset();
     for (const id of ["admin-users-table", "admin-records-table", "admin-history-list", "admin-record-summary", "admin-calendar-summary"]) $("#" + id).innerHTML = "";
     chooseOptions([]);
     for (const id of ["admin-access-dialog", "admin-correction-dialog"]) $("#" + id).close();

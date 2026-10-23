@@ -134,7 +134,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
   function download(id) {const document=accessItem(documents,id);return {blob:files.get(id),filename:document.filename};}
   async function downloadTerm(id) {
     const requestedActor=actorUid,event=accessItem(events,id),profile=target(event.uid);
-    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=account-management-1');
+    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=admin-roles-1');
     const bytes=await generateTermPdf({employee:{name:profile.name,employeeNumber:profile.employeeNumber,jobTitle:profile.jobTitle,department:profile.department},event:{id:event.id,type:event.type,title:event.title,content:event.content,occurredOn:event.occurredOn,createdByName:event.createdByName,createdAt:event.createdAt,version:event.version,status:event.status,archivedAt:event.archivedAt,archiveReason:event.archiveReason},generatedAt:now(),demonstration:true});
     if(actorUid!==requestedActor)fail('A sessão demonstrativa mudou. Gere o termo novamente.',403);
     accessItem(events,id);
@@ -143,6 +143,12 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
   function select(uid) {if(!demoActors.some(item=>item.uid===uid))fail('Perfil demonstrativo inválido.');if(profiles.get(uid)?.status!=='active')fail('Esta conta está sem acesso ao demonstrativo. Escolha outro perfil para continuar.',403);actorUid=uid;return sessionUser();}
   function sessionUser() {const profile=actor();if(profile.status!=='active')fail('Esta conta está sem acesso ao demonstrativo. Escolha outro perfil para continuar.',403);return {uid:actorUid,name:profile.name,email:profile.email,demo:true,role:profile.role==='admin'?'admin':'employee'};}
   function synchronizeAccount(user) {const profile=profiles.get(user.uid);if(profile)profile.status=user.status;}
-  return {request,download,downloadTerm,select,sessionUser,synchronizeAccount};
+  function synchronizeAdministrator(user) {
+    const profile=profiles.get(user.uid);
+    if(!profile)return;
+    if(user.role==='admin'&&profile.role!=='admin') {profile.previousRole=profile.role;profile.role='admin';}
+    else if(user.role!=='admin'&&profile.role==='admin') {profile.role=profile.previousRole||'employee';delete profile.previousRole;}
+  }
+  return {request,download,downloadTerm,select,sessionUser,synchronizeAccount,synchronizeAdministrator};
 }
 export const peopleDemo=createPeopleDemo();

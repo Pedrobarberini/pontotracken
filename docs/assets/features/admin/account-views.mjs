@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=account-management-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-roles-1";
 
 export const accountLabels = {
   pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", deleted: "Conta excluída"
@@ -6,6 +6,11 @@ export const accountLabels = {
 
 /** Returns plain text; the history view escapes each value when rendering. */
 export function accountEventDetails(event) {
+  if (["administrator:grant", "administrator:revoke"].includes(event.action)) return {
+    title: event.action === "administrator:grant" ? "CONCESSÃO DE ADMIN" : "REMOÇÃO DE ADMIN",
+    before: event.before?.role === "admin" ? "ADMIN" : "Sem permissão de ADMIN",
+    after: event.after?.role === "admin" ? "ADMIN" : "Sem permissão de ADMIN"
+  };
   if (event.action === "account:delete") return {
     title: "EXCLUSÃO DE CONTA",
     before: accountLabels[event.before?.status] || "Conta anterior",
@@ -25,8 +30,9 @@ export function accountEventDetails(event) {
 
 export function accountActions(person) {
   const history = `<button class="text-button" data-records-uid="${esc(person.uid)}">Ver ponto</button>`;
+  const role = person.canChangeRole === true && person.status === "active" ? `<button type="button" class="text-button" data-role-account-uid="${esc(person.uid)}">${person.role === "admin" ? "Remover ADMIN" : "Tornar ADMIN"}</button>` : "";
   if (person.status === "deleted") return `${history}<span class="field-hint">Histórico preservado</span>`;
-  if (person.role === "admin") return `${history}<span class="field-hint">Acesso protegido</span>`;
+  if (person.role === "admin") return `${history}${role}<span class="field-hint">${role ? "Para excluir a conta, remova ADMIN antes." : "Acesso protegido"}</span>`;
   const active = person.status === "active";
-  return `${history}<button class="button ${active ? "secondary" : "primary"} small" data-access-uid="${esc(person.uid)}" data-status="${active ? "blocked" : "active"}">${active ? "Bloquear" : person.status === "blocked" ? "Reativar" : "Aprovar"}</button><button type="button" class="text-button admin-delete-action" data-delete-account-uid="${esc(person.uid)}">Excluir conta</button>`;
+  return `${history}<button class="button ${active ? "secondary" : "primary"} small" data-access-uid="${esc(person.uid)}" data-status="${active ? "blocked" : "active"}">${active ? "Bloquear" : person.status === "blocked" ? "Reativar" : "Aprovar"}</button>${role}<button type="button" class="text-button admin-delete-action" data-delete-account-uid="${esc(person.uid)}">Excluir conta</button>${person.status === "pending" ? '<span class="field-hint">Aprove o acesso antes de conceder ADMIN.</span>' : ""}`;
 }

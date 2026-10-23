@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=account-management-1";
+import { $ } from "../../shared/dom.mjs?v=admin-roles-1";
 
 /** Transfers are verified on the server before any ownership change is offered. */
 export function createAccountTransfer({ api, getUser }) {

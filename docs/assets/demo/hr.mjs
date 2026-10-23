@@ -1,5 +1,5 @@
-import {findDemandWarnings} from '../vendor/hr-planning.mjs?v=account-management-1';
-import {createPlanningNoticeDemo} from './planning-notices.mjs?v=account-management-1';
+import {findDemandWarnings} from '../vendor/hr-planning.mjs?v=admin-roles-1';
+import {createPlanningNoticeDemo} from './planning-notices.mjs?v=admin-roles-1';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const text=(value,min,max)=>{if(typeof value!=='string'||value.trim().length<min||value.trim().length>max)fail('Preencha os campos e descreva o motivo (mínimo 10 caracteres).');return value.trim();};
 const date=value=>{if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T12:00:00Z'))||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)fail('Data inválida.');return value;};
