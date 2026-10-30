@@ -1,6 +1,6 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=admin-roles-1";
-import { $, busy } from "../../shared/dom.mjs?v=admin-roles-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=admin-roles-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=tracken-pessoas-1";
+import { $, busy } from "../../shared/dom.mjs?v=tracken-pessoas-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=tracken-pessoas-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
   const { firebaseAuth } = createFirebaseIdentity(state);
   function loginExchange() {
@@ -31,7 +31,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
     if (clearMessages) clearAuthMessages();
     $("#auth-eyebrow").textContent = register ? "PRIMEIRO ACESSO" : "BEM-VINDO";
     $("#auth-title").textContent = register ? "Crie sua conta" : "Entre na sua conta";
-    $("#auth-description").textContent = register ? "Cadastre seu e-mail para solicitar acesso ao ponto." : "Use seu e-mail ou entre com sua conta Google.";
+    $("#auth-description").textContent = register ? "Cadastre seu e-mail para solicitar acesso ao Tracken Pessoas." : "Use seu e-mail ou entre com sua conta Google.";
     $("#confirm-password-field").hidden = !register;
     $("#confirm-password").disabled = !register || !state.session.firebaseReady;
     $("#confirm-password").required = register;
@@ -70,7 +70,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
       if (error.code !== "ACCOUNT_PENDING_APPROVAL") throw error;
       $("#email").value = credential.user.email || $("#email").value;
       setAuthMode("login", false);
-      $("#auth-message").textContent = created ? "Conta criada! Aguarde a autorização da empresa para registrar seu ponto." : "Sua conta foi identificada. Aguarde a autorização da empresa para registrar seu ponto.";
+      $("#auth-message").textContent = created ? "Conta criada! Aguarde a autorização da empresa para acessar o Tracken Pessoas." : "Sua conta foi identificada. Aguarde a autorização da empresa para acessar o Tracken Pessoas.";
       $("#auth-message").hidden = false;
       return;
     }

@@ -1,4 +1,5 @@
-import { $, $$ } from "../shared/dom.mjs?v=admin-roles-1";
+import { $, $$ } from "../shared/dom.mjs?v=tracken-pessoas-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=tracken-pessoas-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {
@@ -15,7 +16,7 @@ function createNavigation({ state, onView }) {
   $("#menu-toggle").onclick = () => {
     const open = $("#menu-toggle").getAttribute("aria-expanded") !== "true";
     setMenu(open);
-    if (open) $("#sidebar .nav-button.active").focus();
+    if (open) $("#sidebar .nav-button.active")?.focus();
   };
   $("#sidebar-backdrop").onclick = () => setMenu(false, true);
   mobileMenu.addEventListener("change", () => setMenu(false));
@@ -38,9 +39,28 @@ function createNavigation({ state, onView }) {
     }
   });
   setMenu(false);
+  function refreshAccess() {
+    const enabled = attendanceEnabled(state);
+    for (const element of $$("[data-attendance-control]")) {
+      element.hidden = !enabled;
+      if (element.tagName === "BUTTON") element.disabled = !enabled;
+    }
+    for (const button of $$("[data-view]")) {
+      if (!ATTENDANCE_VIEWS.includes(button.dataset.view)) continue;
+      button.hidden = !enabled;
+      button.disabled = !enabled;
+    }
+    for (const name of ATTENDANCE_VIEWS) {
+      const view = $(`#view-${name}`);
+      if (view) view.inert = !enabled;
+    }
+    return enabled;
+  }
   function switchView(view, load = true) {
-    if (!["registro", "espelho", "importar", "jornada", "admin", "visao", "ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores"].includes(view)) view = "registro";
-    if (view === "admin" && state.session?.user?.role !== "admin") view = "registro";
+    const enabled = refreshAccess();
+    if (!["registro", "espelho", "importar", "jornada", "admin", "visao", "ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores"].includes(view)) view = defaultView(state);
+    if (ATTENDANCE_VIEWS.includes(view) && !enabled) view = defaultView(state);
+    if (view === "admin" && state.session?.user?.role !== "admin") view = defaultView(state);
     if (["pessoas", "gestao", "indicadores"].includes(view) && !state.peopleContext?.canManagePeople) view = "ficha";
     setMenu(false, $("#menu-toggle").getAttribute("aria-expanded") === "true");
     state.view = view;
@@ -61,11 +81,12 @@ function createNavigation({ state, onView }) {
   $$("[data-view]").forEach((btn) => btn.onclick = () => switchView(btn.dataset.view));
   $("#sidebar .brand").onclick = (event) => {
     event.preventDefault();
-    switchView("registro");
+    switchView(defaultView(state));
   };
   $$("[data-open-import]").forEach((btn) => btn.onclick = () => switchView("importar"));
   $$("[data-open-history]").forEach((btn) => btn.onclick = () => switchView("espelho"));
-  return { switchView, setMenu };
+  refreshAccess();
+  return { switchView, setMenu, refreshAccess };
 }
 export {
   createNavigation

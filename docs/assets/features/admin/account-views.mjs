@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-roles-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=tracken-pessoas-1";
 
 export const accountLabels = {
   pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", deleted: "Conta excluída"
@@ -28,8 +28,8 @@ export function accountEventDetails(event) {
   };
 }
 
-export function accountActions(person) {
-  const history = `<button class="text-button" data-records-uid="${esc(person.uid)}">Ver ponto</button>`;
+export function accountActions(person, {attendance = true} = {}) {
+  const history = attendance ? `<button class="text-button" data-records-uid="${esc(person.uid)}">Ver ponto</button>` : "";
   const role = person.canChangeRole === true && person.status === "active" ? `<button type="button" class="text-button" data-role-account-uid="${esc(person.uid)}">${person.role === "admin" ? "Remover ADMIN" : "Tornar ADMIN"}</button>` : "";
   if (person.status === "deleted") return `${history}<span class="field-hint">Histórico preservado</span>`;
   if (person.role === "admin") return `${history}${role}<span class="field-hint">${role ? "Para excluir a conta, remova ADMIN antes." : "Acesso protegido"}</span>`;

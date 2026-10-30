@@ -1,15 +1,19 @@
-import { createProvenance } from "../history/provenance.mjs?v=admin-roles-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=admin-roles-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=admin-roles-1";
-import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=admin-roles-1";
-import { createAccountDeletion } from "./account-deletion-controller.mjs?v=admin-roles-1";
-import { createAccountTransfer } from "./account-transfer-controller.mjs?v=admin-roles-1";
-import { createAccountRole } from "./account-role-controller.mjs?v=admin-roles-1";
+import { createProvenance } from "../history/provenance.mjs?v=tracken-pessoas-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=tracken-pessoas-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=tracken-pessoas-1";
+import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=tracken-pessoas-1";
+import { createAccountDeletion } from "./account-deletion-controller.mjs?v=tracken-pessoas-1";
+import { createAccountTransfer } from "./account-transfer-controller.mjs?v=tracken-pessoas-1";
+import { createAccountRole } from "./account-role-controller.mjs?v=tracken-pessoas-1";
+import { attendanceEnabled } from "../../core/features.mjs?v=tracken-pessoas-1";
 const labels = { ...accountLabels, recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
-  const provenance = createProvenance({ api, formatDate });
-  let team = [], choices = [], records = [], selected = null, tab = "team", access = null, correction = null, usersOffset = 0, historyOffset = 0, usersNext = null, historyNext = null, epoch = 0, usersSequence = 0, historySequence = 0;
+  const pointsAllowed = () => attendanceEnabled(state);
+  const pointApi = (...args) => pointsAllowed() ? api(...args) : Promise.reject(Object.assign(new Error("Esta funcionalidade não está disponível neste acesso."), {status:403}));
+  const provenance = createProvenance({ api:pointApi, formatDate });
+  const defaultTab = () => pointsAllowed() ? "team" : "users";
+  let team = [], choices = [], records = [], selected = null, tab = defaultTab(), access = null, correction = null, usersOffset = 0, historyOffset = 0, usersNext = null, historyNext = null, epoch = 0, usersSequence = 0, historySequence = 0;
   const deletion = createAccountDeletion({ api, toast, async onDeleted(user) {
     epoch++;
     if (access?.uid === user.uid) { access = null; $("#admin-access-dialog").close(); }
@@ -18,7 +22,9 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     await users();
     if (selected?.uid === user.uid) await loadRecords();
   } });
-  const transfer = createAccountTransfer({api, getUser: () => state?.session?.user});
+  const transfer = createAccountTransfer({api:pointApi, getUser: () => state?.session?.user});
+  const openTransfer = $("#admin-open-transfer").onclick;
+  $("#admin-open-transfer").onclick = () => { if (pointsAllowed()) openTransfer(); };
   const accountRole = createAccountRole({api, toast, getUser: () => state?.session?.user, onChanged: () => users()});
   const report = (error) => {
     $("#admin-error").textContent = error.message;
@@ -47,7 +53,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
       team = result.users;
       usersNext = result.nextOffset;
       for (const status of ["pending", "active", "blocked"]) $("#admin-count-" + status).textContent = result.counts[status] || 0;
-      $("#admin-users-table").innerHTML = team.length ? `<div class="table-scroll"><table class="records-table admin-users-table"><thead><tr><th>Funcionário</th><th>Acesso</th><th>Ações</th></tr></thead><tbody>${team.map((u) => `<tr><td><strong>${esc(u.name)}</strong><span class="admin-email">${esc(u.email)}</span></td><td><span class="status ${["blocked", "deleted"].includes(u.status) ? "blocked" : u.status === "pending" ? "pending" : ""}">${u.role === "admin" ? "ADMIN" : labels[u.status]}</span></td><td><div class="admin-row-actions">${accountActions(u)}</div></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><strong>Nenhum cadastro encontrado.</strong><span>Os funcionários aparecem após tentar entrar no site.</span></div>';
+      $("#admin-users-table").innerHTML = team.length ? `<div class="table-scroll"><table class="records-table admin-users-table"><thead><tr><th>Funcionário</th><th>Acesso</th><th>Ações</th></tr></thead><tbody>${team.map((u) => `<tr><td><strong>${esc(u.name)}</strong><span class="admin-email">${esc(u.email)}</span></td><td><span class="status ${["blocked", "deleted"].includes(u.status) ? "blocked" : u.status === "pending" ? "pending" : ""}">${u.role === "admin" ? "ADMIN" : labels[u.status]}</span></td><td><div class="admin-row-actions">${accountActions(u,{attendance:pointsAllowed()})}</div></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state"><strong>Nenhum cadastro encontrado.</strong><span>Os funcionários aparecem após tentar entrar no site.</span></div>';
       $("#admin-users-prev").disabled = offset === 0;
       $("#admin-users-next").disabled = usersNext === null;
       $("#admin-users-page").textContent = `Página ${offset / 50 + 1}`;
@@ -59,10 +65,11 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     }
   }
   async function showTab(next, { load = true, scroll = true, notify = true } = {}) {
-    if (!["team", "users", "records", "history"].includes(next)) next = "team";
+    if (!["team", "users", "records", "history"].includes(next) || !pointsAllowed() && ["team", "records"].includes(next)) next = defaultTab();
     tab = next;
     clearError();
     for (const button of document.querySelectorAll("[data-admin-tab]")) {
+      button.hidden = !pointsAllowed() && ["team", "records"].includes(button.dataset.adminTab);
       button.classList.toggle("active", button.dataset.adminTab === next);
       button.setAttribute("aria-pressed", String(button.dataset.adminTab === next));
       button.setAttribute("aria-controls", button.dataset.adminTab === "team" ? "team-panel" : `admin-panel-${button.dataset.adminTab}`);
@@ -70,6 +77,8 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     for (const panel of document.querySelectorAll(".admin-panel")) panel.hidden = panel.id !== `admin-panel-${next}`;
     const teamPanel = $("#team-panel");
     if (teamPanel) teamPanel.hidden = next !== "team";
+    $("#admin-open-transfer").hidden = !pointsAllowed();
+    $("#admin-add-record").hidden = !pointsAllowed();
     if (notify) document.dispatchEvent(new CustomEvent("ponto:admin-tab", { detail: { tab: next } }));
     if (scroll) {
       const tabs = $("#view-admin .admin-tabs"), rect = tabs.getBoundingClientRect(), header = $(".topbar")?.getBoundingClientRect().height || 0;
@@ -83,6 +92,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     if (next === "records" && $("#admin-employee").value) await loadRecords();
   }
   async function loadRecords() {
+    if (!pointsAllowed()) return;
     clearError();
     const uid = $("#admin-employee").value, generation = ++epoch;
     records = [];
@@ -116,7 +126,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     access = { ...person, nextStatus: status };
     $("#admin-access-title").textContent = status === "active" ? person.status === "blocked" ? "Reativar acesso?" : "Aprovar acesso?" : "Bloquear acesso?";
     $("#admin-access-person").textContent = `${person.name} · ${person.email}`;
-    $("#admin-access-description").textContent = status === "active" ? "O funcionário poderá entrar e registrar seu ponto." : "As sessões serão encerradas. Os registros anteriores serão preservados.";
+    $("#admin-access-description").textContent = status === "active" ? "O funcionário poderá entrar e acessar as funções permitidas pelo seu perfil." : "As sessões serão encerradas. Os registros anteriores serão preservados.";
     $("#admin-access-reason").value = status === "active" ? "Cadastro conferido pela empresa." : "";
     $("#admin-access-error").hidden = true;
     $("#admin-access-dialog").showModal();
@@ -129,7 +139,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     $("#admin-correction-preview").textContent = recorded && times.length % 2 === 1 ? "Há uma entrada sem saída. O dia ficará em aberto." : recorded ? "Os intervalos completos serão somados após salvar." : "Esta ocorrência não soma horas.";
   }
   function openCorrection(date) {
-    if (!selected || selected.status === "deleted") return;
+    if (!pointsAllowed() || !selected || selected.status === "deleted") return;
     const row = records.find((r) => r.date === date);
     const existing = row && !row.virtual;
     correction = { uid: selected.uid, version: existing ? row.version || 0 : 0 };
@@ -154,7 +164,8 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
       const result = await api("admin-history", { query: `&uid=${encodeURIComponent($("#admin-history-employee").value)}&offset=${historyOffset}` });
       if (generation !== epoch || sequence !== historySequence) return;
       historyNext = result.nextOffset;
-      $("#admin-history-list").innerHTML = result.events.length ? result.events.map((event) => {
+      const events = pointsAllowed() ? result.events : result.events.filter(event => !/^(?:record:|schedule:|overtime:|registry:|account:points-transfer$)/.test(event.action));
+      $("#admin-history-list").innerHTML = events.length ? events.map((event) => {
         const when = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(event.created_at)), point = event.action === "record:correct";
         const schedule = event.action === "schedule:configure", extra = event.action.startsWith("overtime:"), preparation = event.action === "registry:configure";
         const describe = (value) => !value ? "Sem registro anterior" : preparation ? "Dados da etapa futura atualizados." : schedule ? `${value.start_time} a ${value.end_time}, ${value.expected_minutes} min de jornada` : extra ? [{ pending: "Aguardando análise", approved: "Aprovada", rejected: "Recusada", running: "Em andamento" }[value.status] || value.status, value.requested_by && `Solicitante: ${value.requested_by}`, value.requested_work && `Solicitado: ${value.requested_work}`, value.performed_work && `Realizado: ${value.performed_work}`, value.approver_uid && `Responsável: ${value.approver_uid}`].filter(Boolean).join("\n") : point ? recordText(value) : labels[value.status];
@@ -162,7 +173,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
         const accountEvent = accountEventDetails(event);
         const before = accountEvent?.before ?? describe(event.before), after = accountEvent?.after ?? describe(event.after), title = accountEvent?.title ?? (preparation ? "ETAPA FUTURA" : schedule ? "CONFIGURAÇÃO DE JORNADA" : extra ? overtimeTitles[event.action] || "ALTERAÇÃO DE HORAS EXTRAS" : point ? "CORREÇÃO DE PONTO" : "ALTERAÇÃO DE ACESSO");
         return `<article class="admin-event"><div class="admin-event-heading"><div><span class="eyebrow muted">${title}</span><h3>${esc(event.target_name)}${event.date ? " · " + esc(formatDate(event.date)) : ""}</h3><span class="admin-email">${esc(event.target_email)}</span></div><time>${esc(when)}</time></div><div class="admin-comparison"><div><span>Antes</span><strong>${esc(before)}</strong></div><div><span>Depois</span><strong>${esc(after)}</strong></div></div><p class="admin-reason">${esc(event.reason)}</p><p class="admin-event-actor">Alterado por ${esc(event.actor_name)} · ${esc(event.actor_email)}</p></article>`;
-      }).join("") : '<div class="history-card empty-state"><strong>Nenhuma alteração administrativa.</strong><span>As aprovações, bloqueios e correções aparecerão aqui.</span></div>';
+      }).join("") : '<div class="history-card empty-state"><strong>Nenhuma alteração administrativa.</strong><span>As alterações de acesso e permissões aparecerão aqui.</span></div>';
       $("#admin-history-prev").disabled = offset === 0;
       $("#admin-history-next").disabled = historyNext === null;
       $("#admin-history-page").textContent = `Página ${offset / 50 + 1}`;
@@ -192,7 +203,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     if (action) openAccess(action.dataset.accessUid, action.dataset.status);
     if (remove) deletion.open(team.find(person => person.uid === remove.dataset.deleteAccountUid));
     if (role) accountRole.open(team.find(person => person.uid === role.dataset.roleAccountUid));
-    if (record) {
+    if (record && pointsAllowed()) {
       $("#admin-employee").value = record.dataset.recordsUid;
       showTab("records");
     }
@@ -200,6 +211,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
   document.querySelectorAll("[data-admin-tab]").forEach((button) => button.onclick = () => showTab(button.dataset.adminTab));
   $("#admin-record-filter").onsubmit = async (event) => {
     event.preventDefault();
+    if (!pointsAllowed()) return;
     try {
       const result = await api("admin-users", { query: "&q=" + encodeURIComponent($("#admin-record-search").value.trim()) });
       chooseOptions(result.users);
@@ -217,7 +229,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     const button = event.target.closest("[data-correct-date]");
     if (button) openCorrection(button.dataset.correctDate);
     const history = event.target.closest("[data-record-history]");
-    if (history && selected) provenance.open(selected, history.dataset.recordHistory);
+    if (history && selected && pointsAllowed()) provenance.open(selected, history.dataset.recordHistory);
   };
   $("#admin-add-record").onclick = () => openCorrection();
   $("#admin-correction-status").onchange = correctionPreview;
@@ -229,7 +241,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
   provenanceButton.textContent = "Histórico do registro";
   $("#admin-correction-before").insertAdjacentElement("afterend", provenanceButton);
   provenanceButton.onclick = () => {
-    if (selected) provenance.open(selected, $("#admin-correction-date").value);
+    if (selected && pointsAllowed()) provenance.open(selected, $("#admin-correction-date").value);
   };
   $("#admin-access-cancel").onclick = () => $("#admin-access-dialog").close();
   $("#admin-correction-cancel").onclick = () => $("#admin-correction-dialog").close();
@@ -252,7 +264,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
   };
   $("#admin-correction-form").onsubmit = async (event) => {
     event.preventDefault();
-    if (!correction) return;
+    if (!pointsAllowed() || !correction) return;
     $("#admin-correction-error").hidden = true;
     $("#admin-correction-cancel").disabled = true;
     const status = $("#admin-correction-status").value, times = status === "recorded" ? $("#admin-correction-times").value.split("|").map((t) => t.trim()).filter(Boolean) : [];
@@ -287,7 +299,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
       history();
     }
   };
-  showTab("team", { load: false, scroll: false, notify: false });
+  showTab(defaultTab(), { load: false, scroll: false, notify: false });
   return { async open() {
     if (!$("#admin-month").value) $("#admin-month").value = currentMonth();
     await showTab(tab, { scroll: false, notify: false });
@@ -307,7 +319,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     for (const id of ["admin-users-table", "admin-records-table", "admin-history-list", "admin-record-summary", "admin-calendar-summary"]) $("#" + id).innerHTML = "";
     chooseOptions([]);
     for (const id of ["admin-access-dialog", "admin-correction-dialog"]) $("#" + id).close();
-    showTab("team", { load: false, scroll: false, notify: false });
+    showTab(defaultTab(), { load: false, scroll: false, notify: false });
   } };
 }
 export {

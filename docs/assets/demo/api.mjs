@@ -1,13 +1,14 @@
-import { journeyDemo } from "./journey.mjs?v=admin-roles-1";
-import { provenanceDemo } from "./provenance.mjs?v=admin-roles-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=admin-roles-1";
-import { createHrDemo } from "./hr.mjs?v=admin-roles-1";
-import { createDevelopmentDemo } from "./development.mjs?v=admin-roles-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=admin-roles-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=admin-roles-1";
+import { journeyDemo } from "./journey.mjs?v=tracken-pessoas-1";
+import { provenanceDemo } from "./provenance.mjs?v=tracken-pessoas-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=tracken-pessoas-1";
+import { createHrDemo } from "./hr.mjs?v=tracken-pessoas-1";
+import { createDevelopmentDemo } from "./development.mjs?v=tracken-pessoas-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=tracken-pessoas-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=tracken-pessoas-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
+const hrDevelopmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, includeAttendance:false});
 const MONTHS = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, MAIO: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
 const LABELS = { recorded: "Registrado", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 let loggedIn = false, preview = null;
@@ -168,7 +169,7 @@ async function parseSpreadsheet(file, year) {
   if (!rows.length && !warnings.length) error("Não encontrei registros preenchidos abaixo dos meses.");
   return { rows, warnings, periods: columns.map((c) => ({ year: c.year, month: c.month })), header_row: header + 1, filename: file.name.slice(0, 180), id: crypto.randomUUID() };
 }
-async function demoApi(action, { data = null, query = "" } = {}) {
+async function legacyDemoApi(action, { data = null, query = "" } = {}) {
   if (action === "session") return { user: loggedIn ? peopleDemo.sessionUser() : null, csrf: "presentation-only", demoAllowed: true, firebaseReady: false, firebase: null, timezone: "America/Sao_Paulo", features: { registryPreparation: false } };
   if (action === "demo") {
     loggedIn = true;
@@ -272,7 +273,7 @@ function saveBlob(blob, name) {
   link.click();
   setTimeout(() => URL.revokeObjectURL(href), 1e3);
 }
-async function demoDownload(url) {
+async function legacyDemoDownload(url) {
   if (!loggedIn) error("Abra a demonstração para continuar.", 401);
   const params = new URL(url, location.href).searchParams;
   if (params.get("action") === "people-event-term") {
@@ -299,16 +300,58 @@ async function demoDownload(url) {
   }
   if (params.get("action") === "export") {
     const month = params.get("month");
-    const { rows } = await demoApi("records", { query: `&${params.toString()}` });
+    const { rows } = await legacyDemoApi("records", { query: `&${params.toString()}` });
     saveBlob(new Blob([calendarCsv(rows)], { type: "text/csv;charset=utf-8" }), `ponto-${month}.csv`);
     return;
   }
   error("Download indisponível.");
 }
+const attendanceActions = new Set([
+  'records','export','template','punch','record-provenance','admin-record-provenance',
+  'import-preview','import-commit','journey','presence','admin-team','admin-schedule',
+  'admin-records','admin-correct','admin-account-transfer-preview','admin-account-transfer',
+  'admin-registry','admin-registry-save','demo-calendar','demo-attendance-report'
+]);
+const isAttendanceAction = action => attendanceActions.has(action) || action.startsWith('overtime-') || action.startsWith('admin-overtime');
+const isAttendanceEvent = event => /^(?:record:|schedule:|overtime:|registry:|account:points-transfer$)/.test(event.action);
+
+// The public demonstration is dedicated to HR for every simulated persona.
+// The legacy engine remains independent for regression tests of reserved modules.
+async function demoApi(action, options = {}) {
+  if (action === 'session') {
+    const session = await legacyDemoApi(action, options);
+    return {...session, features:{registryPreparation:false,attendance:false}};
+  }
+  if (action === 'demo') { loggedIn = true; return {ok:true,csrf:'presentation-only'}; }
+  if (isAttendanceAction(action)) error('Esta funcionalidade não está disponível na demonstração.',403);
+  if (!loggedIn) error('Abra a demonstração para continuar.',401);
+  if (action.startsWith('development-')) return hrDevelopmentDemo.request(action,{data:options.data||{},query:options.query||''});
+  if (action === 'admin-history') {
+    const params = new URLSearchParams((options.query || '').replace(/^&/,''));
+    const offset = Number(params.get('offset') || 0);
+    if (!Number.isInteger(offset) || offset < 0 || offset > 10000) error('Página inválida.');
+    const rows = [];
+    for (let next = 0; next !== null;) {
+      params.set('offset', String(next));
+      const page = await legacyDemoApi(action,{...options,query:'&'+params});
+      rows.push(...page.events.filter(event => !isAttendanceEvent(event)));
+      next = page.nextOffset;
+    }
+    return {events:rows.slice(offset,offset+50),nextOffset:rows.length>offset+50?offset+50:null};
+  }
+  return legacyDemoApi(action, options);
+}
+async function demoDownload(url) {
+  const action = new URL(url, globalThis.location?.href || 'https://demo.invalid/').searchParams.get('action') || '';
+  if (isAttendanceAction(action)) error('Esta funcionalidade não está disponível na demonstração.',403);
+  return legacyDemoDownload(url);
+}
 export {
   demoActors,
   demoApi,
   demoDownload,
+  legacyDemoApi,
+  legacyDemoDownload,
   minutes,
   parseCell,
   parseSpreadsheet

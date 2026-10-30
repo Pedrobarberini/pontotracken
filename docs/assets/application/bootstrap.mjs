@@ -1,33 +1,52 @@
-import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=admin-roles-1";
-import { hours, createDateFormatters } from "../shared/formatters.mjs?v=admin-roles-1";
-import { createRecordsTable } from "../shared/records-table.mjs?v=admin-roles-1";
-import { createApplicationState } from "../core/state.mjs?v=admin-roles-1";
-import { createClock } from "../core/clock.mjs?v=admin-roles-1";
-import { createAPIClient } from "../core/api-client.mjs?v=admin-roles-1";
-import { createAuthentication } from "../core/auth/controller.mjs?v=admin-roles-1";
-import { createNavigation } from "../core/navigation.mjs?v=admin-roles-1";
-import { createAttendance } from "../features/attendance/controller.mjs?v=admin-roles-1";
-import { createHistory } from "../features/history/controller.mjs?v=admin-roles-1";
-import { createSpreadsheetImport } from "../features/import/controller.mjs?v=admin-roles-1";
-import { createAdmin } from "../features/admin/controller.mjs?v=admin-roles-1";
-import { createJourney } from "../features/journey/controller.mjs?v=admin-roles-1";
-import { createPeople } from "../features/people/controller.mjs?v=admin-roles-1";
-import { createHR } from "../features/hr/controller.mjs?v=admin-roles-1";
-import { createDevelopment } from "../features/development/controller.mjs?v=admin-roles-1";
-import { apiBase, demoHref } from "../connection.js?v=admin-roles-1";
+import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=tracken-pessoas-1";
+import { hours, createDateFormatters } from "../shared/formatters.mjs?v=tracken-pessoas-1";
+import { createRecordsTable } from "../shared/records-table.mjs?v=tracken-pessoas-1";
+import { createApplicationState } from "../core/state.mjs?v=tracken-pessoas-1";
+import { createClock } from "../core/clock.mjs?v=tracken-pessoas-1";
+import { createAPIClient } from "../core/api-client.mjs?v=tracken-pessoas-1";
+import { createAuthentication } from "../core/auth/controller.mjs?v=tracken-pessoas-1";
+import { createNavigation } from "../core/navigation.mjs?v=tracken-pessoas-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView, isAttendanceAction } from "../core/features.mjs?v=tracken-pessoas-1";
+import { createAttendance } from "../features/attendance/controller.mjs?v=tracken-pessoas-1";
+import { createHistory } from "../features/history/controller.mjs?v=tracken-pessoas-1";
+import { createSpreadsheetImport } from "../features/import/controller.mjs?v=tracken-pessoas-1";
+import { createAdmin } from "../features/admin/controller.mjs?v=tracken-pessoas-1";
+import { createJourney } from "../features/journey/controller.mjs?v=tracken-pessoas-1";
+import { createPeople } from "../features/people/controller.mjs?v=tracken-pessoas-1";
+import { createHR } from "../features/hr/controller.mjs?v=tracken-pessoas-1";
+import { createDevelopment } from "../features/development/controller.mjs?v=tracken-pessoas-1";
+import { apiBase, demoHref } from "../connection.js?v=tracken-pessoas-1";
 async function startApplication() {
   const isDemo = document.body.dataset.mode === "demo";
-  const demoClient = isDemo ? await import("../demo/api.mjs?v=admin-roles-1") : null;
+  const demoClient = isDemo ? await import("../demo/api.mjs?v=tracken-pessoas-1") : null;
   const state = createApplicationState();
+  state.demo = isDemo;
   const clock = createClock(state);
   const { toast, showDataError } = createNotifications();
   const { formatDate, monthLabel } = createDateFormatters(() => state.timezone);
   const recordsTable = createRecordsTable({ state, formatDate, hours });
   const client = createAPIClient({ state, baseURL: apiBase, demoClient, syncTime: clock.syncTime });
-  const api = client.request;
+  const api = (action, options) => {
+    if (isAttendanceAction(action) && !attendanceEnabled(state)) {
+      const error = new Error("Esta área não está disponível para sua conta.");
+      error.status = 403;
+      return Promise.reject(error);
+    }
+    const ownerUid = state.session?.user?.uid;
+    return client.request(action, options).then(result => {
+      if (isAttendanceAction(action) && (!attendanceEnabled(state) || state.session?.user?.uid !== ownerUid)) {
+        const error = new Error("A sessão mudou. Atualize a área disponível para continuar.");
+        error.status = 403;
+        throw error;
+      }
+      return result;
+    });
+  };
   const bootContent = $("#boot").innerHTML;
   const download = async (path) => {
     try {
+      const action = new URL(path, document.baseURI).searchParams.get("action");
+      if (isAttendanceAction(action) && !attendanceEnabled(state)) throw new Error("Esta área não está disponível para sua conta.");
       await client.download(path);
     } catch (error) {
       toast(error.message, true);
@@ -36,7 +55,7 @@ async function startApplication() {
   const navigation = createNavigation({ state, onView: loadView });
   const shared = { state, api, busy, toast, hours, ...clock, formatDate };
   const attendance = createAttendance({ ...shared, monthLabel, recordsTable, showDataError });
-  const refreshAttendance = () => state.view === "registro" ? attendance.loadHome() : Promise.resolve();
+  const refreshAttendance = () => attendanceEnabled(state) && state.view === "registro" ? attendance.loadHome() : Promise.resolve();
   const history = createHistory({ ...shared, download, recordsTable, showDataError });
   const spreadsheet = createSpreadsheetImport({ ...shared, download, recordsTable, loadHome: refreshAttendance, switchView: navigation.switchView });
   const admin = createAdmin({ ...shared, onCorrection: refreshAttendance });
@@ -63,10 +82,16 @@ async function startApplication() {
     journey.reset();
     admin.reset();
     spreadsheet.invalidatePreview();
+    state.historySequence = (state.historySequence || 0) + 1;
+    state.loadedDay = null;
+    attendance.renderToday(null);
+    for (const id of ["history-table", "history-summary", "history-calendar-summary", "recent-table", "summary-month"]) $("#" + id).textContent = "";
+    for (const id of ["stat-days", "stat-hours", "stat-pending", "stat-medical"]) $("#" + id).textContent = "—";
   }
   function showLogin() {
     navigation.setMenu(false);
     resetFeatures();
+    navigation.refreshAccess();
     $("#app").hidden = true;
     $("#login").hidden = false;
     $("#boot").hidden = true;
@@ -78,6 +103,10 @@ async function startApplication() {
     $("#confirm-password").disabled = !ready || state.authMode !== "register";
   }
   async function loadView(view) {
+    if (ATTENDANCE_VIEWS.includes(view) && !attendanceEnabled(state)) {
+      navigation.switchView(defaultView(state));
+      return;
+    }
     if (["ausencias", "ciclo"].includes(view)) await hr.open(view);
     if (["desenvolvimento", "indicadores"].includes(view)) await development.open(view);
     if (["ficha", "pessoas", "gestao"].includes(view)) await people.open(view);
@@ -86,7 +115,7 @@ async function startApplication() {
     if (view === "jornada") await journey.open();
     if (view === "admin") {
       await admin.open();
-      await journey.openAdmin();
+      if (attendanceEnabled(state)) await journey.openAdmin();
     }
   }
   async function showApp() {
@@ -105,16 +134,20 @@ async function startApplication() {
     const context = await people.initialize();
     if (!context || state.session?.user?.uid !== user.uid || state.signingOut) return;
     $("#indicators-nav").hidden = !context.canManagePeople;
+    navigation.refreshAccess();
     $("#footer-zone").textContent = state.timezone;
     $(".timezone-pill").textContent = state.timezone === "America/Sao_Paulo" ? "Horário de Brasília" : state.timezone;
     state.month = clock.currentMonth();
     $("#history-month").value = state.month;
     $("#import-year").value = clock.currentParts().year;
     const requested = location.hash.replace("#", "");
-    const allowed = ["registro", "espelho", "importar", "jornada", "ficha", "visao", "ausencias", "ciclo", "desenvolvimento", ...(state.peopleContext?.canManagePeople ? ["pessoas", "gestao", "indicadores"] : []), ...user.role === "admin" ? ["admin"] : []];
-    navigation.switchView(allowed.includes(requested) ? requested : "registro", false);
-    attendance.updateClock();
-    journey.start();
+    const allowed = ["ficha", "visao", "ausencias", "ciclo", "desenvolvimento", ...(attendanceEnabled(state) ? ATTENDANCE_VIEWS : []), ...(state.peopleContext?.canManagePeople ? ["pessoas", "gestao", "indicadores"] : []), ...user.role === "admin" ? ["admin"] : []];
+    navigation.switchView(allowed.includes(requested) ? requested : defaultView(state), false);
+    updateHeaderDate();
+    if (attendanceEnabled(state)) {
+      attendance.updateClock();
+      journey.start();
+    }
     await loadView(state.view);
   }
   function configureDemoCopy() {
@@ -133,7 +166,7 @@ async function startApplication() {
       button.title = "Voltar ao login";
     }
     $(".sidebar-note strong").textContent = "Modo de demonstração.";
-    $(".sidebar-note p").textContent = "Explore com dados de exemplo. Ao atualizar, as marcações de teste são descartadas.";
+    $(".sidebar-note p").textContent = "Explore a gestão de pessoas com dados de exemplo. As alterações são descartadas ao atualizar.";
     $("#punch-confirm > p").textContent = "Esta é uma marcação de teste e será descartada ao atualizar a página.";
   }
   async function bootstrap() {
@@ -172,13 +205,20 @@ async function startApplication() {
       }
     }
   }
-  $("#retry-data").onclick = () => state.view === "espelho" ? history.loadHistory() : attendance.loadHome();
+  function updateHeaderDate() {
+    if (!state.session?.user) return;
+    $("#header-date").textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric", timeZone: state.timezone }).format(new Date(Date.now() + state.clockOffset));
+  }
+  $("#retry-data").onclick = () => loadView(state.view);
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden || !state.session?.user) return;
+    if (document.hidden || !attendanceEnabled(state)) return;
     if (state.view === "registro") attendance.loadHome();
     if (state.view === "espelho") history.loadHistory();
   });
-  setInterval(attendance.updateClock, 1e3);
+  setInterval(() => {
+    updateHeaderDate();
+    if (attendanceEnabled(state)) attendance.updateClock();
+  }, 1e3);
   await bootstrap();
 }
 export {

@@ -1,1 +1,1 @@
-import "./app.js?v=admin-roles-1";
+import "./app.js?v=tracken-pessoas-1";

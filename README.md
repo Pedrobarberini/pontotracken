@@ -1,6 +1,6 @@
-# PontoTracken
+# Tracken Pessoas
 
-Interface de controle de jornada, com cadastro e login Firebase, importação de Excel e gestão da equipe. Inclui fichas individuais, histórico, documentos privados, confirmação de leitura e perfis de Colaborador, Gestor, RH e ADMIN.
+Aplicativo de gestão de pessoas, com cadastro e login Firebase, fichas individuais, histórico, documentos privados, confirmação de leitura, férias, ausências, desenvolvimento e perfis de Colaborador, Gestor, RH e ADMIN.
 
 Acesse: https://pedrobarberini.github.io/pontotracken/
 

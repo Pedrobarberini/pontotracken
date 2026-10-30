@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=admin-roles-1";
+import { $ } from "../../shared/dom.mjs?v=tracken-pessoas-1";
 
 /** Administrative permission is independent from access approval and the employee's RH role. */
 export function createAccountRole({ api, toast, getUser, onChanged }) {
