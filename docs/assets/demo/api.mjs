@@ -1,14 +1,17 @@
-import { journeyDemo } from "./journey.mjs?v=tracken-pessoas-1";
-import { provenanceDemo } from "./provenance.mjs?v=tracken-pessoas-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=tracken-pessoas-1";
-import { createHrDemo } from "./hr.mjs?v=tracken-pessoas-1";
-import { createDevelopmentDemo } from "./development.mjs?v=tracken-pessoas-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=tracken-pessoas-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=tracken-pessoas-1";
+import { journeyDemo } from "./journey.mjs?v=admin-preregistration-1";
+import { provenanceDemo } from "./provenance.mjs?v=admin-preregistration-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=admin-preregistration-1";
+import { createHrDemo } from "./hr.mjs?v=admin-preregistration-1";
+import { createDevelopmentDemo } from "./development.mjs?v=admin-preregistration-1";
+import { createRegistrationsDemo } from "./registrations.mjs?v=admin-preregistration-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=admin-preregistration-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=admin-preregistration-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
 const hrDevelopmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, includeAttendance:false});
+const registrationEvents = [];
+const registrationsDemo = createRegistrationsDemo({peopleDemo, getActor: () => peopleDemo.sessionUser(), listUsers: () => journeyDemo("demo-directory", {actorUid:peopleDemo.sessionUser().uid,dateNow}).users, onAudit: event => registrationEvents.push(event)});
 const MONTHS = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, MAIO: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
 const LABELS = { recorded: "Registrado", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 let loggedIn = false, preview = null;
@@ -181,6 +184,7 @@ async function legacyDemoApi(action, { data = null, query = "" } = {}) {
   if (!loggedIn) error("Abra a demonstração para continuar.", 401);
   if (action === "demo-persona") return {user:peopleDemo.select(data?.uid)};
   if (action.startsWith("admin-") && peopleDemo.sessionUser().role !== "admin") error("Acesso restrito ao administrador.",403);
+  if (action === "admin-registrations" || action.startsWith("admin-registration-")) return registrationsDemo(action,{data:data||{},query});
   if (action.startsWith("people-")) return peopleDemo.request(action,{data:data||{},query});
   if (action.startsWith("hr-")) return hrDemo.request(action,{data:data||{},query});
   if (action.startsWith("development-")) return developmentDemo.request(action,{data:data||{},query});
@@ -199,7 +203,7 @@ async function legacyDemoApi(action, { data = null, query = "" } = {}) {
       history.push(...page.events);
       if (page.events.length < 50) break;
     }
-    const all = [...history, ...provenanceDemo.audit()].filter((event) => !uid || event.target_email === email).sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
+    const all = [...history, ...provenanceDemo.audit(), ...registrationEvents].filter((event) => !uid || event.target_email === email).sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
     return { events: all.slice(offset, offset + 50), nextOffset: all.length > offset + 50 ? offset + 50 : null };
   }
   const journey = journeyDemo(action, context);

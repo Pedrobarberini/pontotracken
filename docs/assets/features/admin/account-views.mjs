@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=tracken-pessoas-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-preregistration-1";
 
 export const accountLabels = {
   pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", deleted: "Conta excluída"
@@ -6,6 +6,14 @@ export const accountLabels = {
 
 /** Returns plain text; the history view escapes each value when rendering. */
 export function accountEventDetails(event) {
+  if (event.action.startsWith("registration:")) {
+    const describe = value => {
+      const row = value?.registration || value;
+      if (!row) return "Sem pré-cadastro anterior";
+      return [row.name, row.email, ({open:"Aguardando vínculo",linked:"Login vinculado",archived:"Arquivado"})[row.status]].filter(Boolean).join(" · ");
+    };
+    return {title: ({"registration:save":"PRÉ-CADASTRO DE COLABORADOR","registration:archive":"ARQUIVAMENTO DE PRÉ-CADASTRO","registration:link":"VÍNCULO DE LOGIN"})[event.action] || "PRÉ-CADASTRO", before: describe(event.before), after: describe(event.after)};
+  }
   if (["administrator:grant", "administrator:revoke"].includes(event.action)) return {
     title: event.action === "administrator:grant" ? "CONCESSÃO DE ADMIN" : "REMOÇÃO DE ADMIN",
     before: event.before?.role === "admin" ? "ADMIN" : "Sem permissão de ADMIN",

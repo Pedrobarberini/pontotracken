@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=tracken-pessoas-1";
+import { startApplication } from "./application/bootstrap.mjs?v=admin-preregistration-1";
 startApplication();

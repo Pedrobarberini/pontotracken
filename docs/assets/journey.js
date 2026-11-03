@@ -1,4 +1,4 @@
-import { createJourney } from "./features/journey/controller.mjs?v=tracken-pessoas-1";
+import { createJourney } from "./features/journey/controller.mjs?v=admin-preregistration-1";
 export {
   createJourney
 };

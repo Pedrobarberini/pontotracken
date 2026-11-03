@@ -61,6 +61,11 @@
   font-size: 12px;
   color: var(--muted);
 }
+.registration-card { padding: 20px; }
+.registration-card .card-heading { gap: 16px; }
+.registration-card .table-scroll { border: 1px solid var(--line); border-radius: 8px; }
+.registration-card table { min-width: 700px; }
+.registration-card .admin-field { min-width: min(220px, 100%); }
 .admin-description {
   font-size: 13px;
   color: var(--muted);

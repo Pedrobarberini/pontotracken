@@ -1,5 +1,5 @@
-import { escapeHTML as escape } from "../../shared/dom.mjs?v=tracken-pessoas-1";
-import { formatInstant } from "../../shared/formatters.mjs?v=tracken-pessoas-1";
+import { escapeHTML as escape } from "../../shared/dom.mjs?v=admin-preregistration-1";
+import { formatInstant } from "../../shared/formatters.mjs?v=admin-preregistration-1";
 const labels = { recorded: "Marcações", weekend: "Fim de semana", medical: "Atestado", not_applicable: "Não se aplica" };
 function describeState(state) {
   if (!state) return "Sem registro";

@@ -1,5 +1,5 @@
-import { $, $$ } from "../shared/dom.mjs?v=tracken-pessoas-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=tracken-pessoas-1";
+import { $, $$ } from "../shared/dom.mjs?v=admin-preregistration-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=admin-preregistration-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {

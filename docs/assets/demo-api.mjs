@@ -1,4 +1,4 @@
-import { demoApi, demoDownload, parseSpreadsheet, parseCell, minutes } from "./demo/api.mjs?v=tracken-pessoas-1";
+import { demoApi, demoDownload, parseSpreadsheet, parseCell, minutes } from "./demo/api.mjs?v=admin-preregistration-1";
 export {
   demoApi,
   demoDownload,

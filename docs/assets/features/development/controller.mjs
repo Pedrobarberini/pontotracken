@@ -1,6 +1,6 @@
-import { escapeHTML as e } from '../../shared/dom.mjs?v=tracken-pessoas-1';
-import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=tracken-pessoas-1';
-import {fromLocalStamp} from './time.mjs?v=tracken-pessoas-1';
+import { escapeHTML as e } from '../../shared/dom.mjs?v=admin-preregistration-1';
+import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=admin-preregistration-1';
+import {fromLocalStamp} from './time.mjs?v=admin-preregistration-1';
 
 export function createDevelopment({state,api,busy,toast}) {
   let context=null, tab='conversations', uid='', cycleId='', rows=[], cycles=[], reviews=[], nextOffset=null, reviewOffset=null, generation=0, epoch=0, range={};
