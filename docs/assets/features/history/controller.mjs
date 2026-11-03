@@ -1,5 +1,5 @@
-import { $ } from "../../shared/dom.mjs?v=security-auth-1";
-import { calendarTotals } from "../calendar/presentation.mjs?v=security-auth-1";
+import { $ } from "../../shared/dom.mjs?v=security-auth-8-1";
+import { calendarTotals } from "../calendar/presentation.mjs?v=security-auth-8-1";
 function createHistory({ state, api, download, hours, recordsTable, showDataError }) {
   async function loadHistory() {
     if (!state.session?.user) return;

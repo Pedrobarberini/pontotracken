@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=security-auth-1";
+import { $ } from "../../shared/dom.mjs?v=security-auth-8-1";
 
 /** Transfers are verified on the server before any ownership change is offered. */
 export function createAccountTransfer({ api, getUser }) {

@@ -1,5 +1,5 @@
-import { $, $$ } from "../shared/dom.mjs?v=security-auth-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=security-auth-1";
+import { $, $$ } from "../shared/dom.mjs?v=security-auth-8-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=security-auth-8-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {

@@ -1,1 +1,1 @@
-import "./app.js?v=security-auth-1";
+import "./app.js?v=security-auth-8-1";

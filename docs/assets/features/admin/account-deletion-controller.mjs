@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=security-auth-1";
+import { $ } from "../../shared/dom.mjs?v=security-auth-8-1";
 
 /** The operation is permanent in the app; previous records remain available to administrators. */
 export function createAccountDeletion({ api, toast, onDeleted }) {
