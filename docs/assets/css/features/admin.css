@@ -66,6 +66,9 @@
 .registration-card .table-scroll { border: 1px solid var(--line); border-radius: 8px; }
 .registration-card table { min-width: 700px; }
 .registration-card .admin-field { min-width: min(220px, 100%); }
+.registration-card .admin-pagination { flex-wrap: wrap; }
+.backup-note { margin: 18px 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--muted); }
+[data-backup-progress] { margin: 16px 0; font-weight: 600; }
 .admin-description {
   font-size: 13px;
   color: var(--muted);

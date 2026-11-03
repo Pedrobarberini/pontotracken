@@ -1,1 +1,1 @@
-import "./app.js?v=admin-preregistration-1";
+import "./app.js?v=manual-backup-1";

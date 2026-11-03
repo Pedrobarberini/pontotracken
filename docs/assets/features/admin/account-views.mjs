@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=admin-preregistration-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=manual-backup-1";
 
 export const accountLabels = {
   pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", deleted: "Conta excluída"
@@ -6,6 +6,11 @@ export const accountLabels = {
 
 /** Returns plain text; the history view escapes each value when rendering. */
 export function accountEventDetails(event) {
+  if(event.action.startsWith('backup:'))return {
+    title:({'backup:create':'CRIAÇÃO DE BACKUP','backup:complete':'BACKUP CONCLUÍDO','backup:failed':'BACKUP NÃO CONCLUÍDO','backup:cancel':'BACKUP CANCELADO','backup:download':'DOWNLOAD DE BACKUP'})[event.action]||'BACKUP',
+    before:event.before?`Cópia ${event.before.id?.slice(0,8)||''} · ${event.before.status||''}`:'Sem alteração anterior',
+    after:`Cópia ${event.after?.id?.slice(0,8)||''} · ${event.after?.status||''}`
+  };
   if (event.action.startsWith("registration:")) {
     const describe = value => {
       const row = value?.registration || value;

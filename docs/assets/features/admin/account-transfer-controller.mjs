@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=admin-preregistration-1";
+import { $ } from "../../shared/dom.mjs?v=manual-backup-1";
 
 /** Transfers are verified on the server before any ownership change is offered. */
 export function createAccountTransfer({ api, getUser }) {

@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=admin-preregistration-1";
+import { startApplication } from "./application/bootstrap.mjs?v=manual-backup-1";
 startApplication();

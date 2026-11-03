@@ -1,5 +1,5 @@
-import { $ } from "../../shared/dom.mjs?v=admin-preregistration-1";
-import { calendarTotals } from "../calendar/presentation.mjs?v=admin-preregistration-1";
+import { $ } from "../../shared/dom.mjs?v=manual-backup-1";
+import { calendarTotals } from "../calendar/presentation.mjs?v=manual-backup-1";
 function createHistory({ state, api, download, hours, recordsTable, showDataError }) {
   async function loadHistory() {
     if (!state.session?.user) return;

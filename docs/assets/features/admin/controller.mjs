@@ -1,15 +1,16 @@
-import { createProvenance } from "../history/provenance.mjs?v=admin-preregistration-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=admin-preregistration-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=admin-preregistration-1";
-import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=admin-preregistration-1";
-import { createAccountDeletion } from "./account-deletion-controller.mjs?v=admin-preregistration-1";
-import { createAccountTransfer } from "./account-transfer-controller.mjs?v=admin-preregistration-1";
-import { createAccountRole } from "./account-role-controller.mjs?v=admin-preregistration-1";
-import { createRegistrations } from "./registrations-controller.mjs?v=admin-preregistration-1";
-import { attendanceEnabled } from "../../core/features.mjs?v=admin-preregistration-1";
+import { createProvenance } from "../history/provenance.mjs?v=manual-backup-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=manual-backup-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=manual-backup-1";
+import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=manual-backup-1";
+import { createAccountDeletion } from "./account-deletion-controller.mjs?v=manual-backup-1";
+import { createAccountTransfer } from "./account-transfer-controller.mjs?v=manual-backup-1";
+import { createAccountRole } from "./account-role-controller.mjs?v=manual-backup-1";
+import { createRegistrations } from "./registrations-controller.mjs?v=manual-backup-1";
+import { createBackups } from "./backups-controller.mjs?v=manual-backup-1";
+import { attendanceEnabled } from "../../core/features.mjs?v=manual-backup-1";
 const labels = { ...accountLabels, recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
-function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
+function createAdmin({ state, api, downloadBackup, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {
   const pointsAllowed = () => attendanceEnabled(state);
   const pointApi = (...args) => pointsAllowed() ? api(...args) : Promise.reject(Object.assign(new Error("Esta funcionalidade não está disponível neste acesso."), {status:403}));
   const provenance = createProvenance({ api:pointApi, formatDate });
@@ -28,6 +29,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
   $("#admin-open-transfer").onclick = () => { if (pointsAllowed()) openTransfer(); };
   const accountRole = createAccountRole({api, toast, getUser: () => state?.session?.user, onChanged: () => users()});
   const registrations = createRegistrations({host: $("#admin-panel-registrations"), api, toast, onChanged: async () => { choices = []; }});
+  const backups = createBackups({host: $("#admin-panel-backups"),api,downloadBackup,toast});
   const report = (error) => {
     $("#admin-error").textContent = error.message;
     $("#admin-error").hidden = false;
@@ -67,7 +69,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     }
   }
   async function showTab(next, { load = true, scroll = true, notify = true } = {}) {
-    if (!["team", "users", "registrations", "records", "history"].includes(next) || !pointsAllowed() && ["team", "records"].includes(next)) next = defaultTab();
+    if (!["team", "users", "registrations", "backups", "records", "history"].includes(next) || !pointsAllowed() && ["team", "records"].includes(next)) next = defaultTab();
     tab = next;
     clearError();
     for (const button of document.querySelectorAll("[data-admin-tab]")) {
@@ -89,6 +91,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     if (!load) return;
     if (next === "users") await users();
     if (next === "registrations") await registrations.load();
+    if (next === "backups") await backups.load();
     if (["records", "history"].includes(next) && !choices.length) await users();
     if (tab !== next) return;
     if (next === "history") await history();
@@ -320,6 +323,7 @@ function createAdmin({ state, api, busy, toast, formatDate, hours, currentMonth,
     transfer.reset();
     accountRole.reset();
     registrations.reset();
+    backups.reset();
     for (const id of ["admin-users-table", "admin-records-table", "admin-history-list", "admin-record-summary", "admin-calendar-summary"]) $("#" + id).innerHTML = "";
     chooseOptions([]);
     for (const id of ["admin-access-dialog", "admin-correction-dialog"]) $("#" + id).close();

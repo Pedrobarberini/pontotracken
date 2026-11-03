@@ -58,8 +58,7 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     }
     throw error;
   }
-  async function download(path, retried = false) {
-    if (demoClient) return demoClient.demoDownload(path);
+  async function fetchDownload(path, retried = false) {
     const requestCSRF = state.session?.csrf;
     const response = await fetch(requestURL(path), requestOptions());
     if (!response.ok) {
@@ -69,7 +68,7 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
       if (response.status === 401 && state.session?.user) {
         try {
           const renewed = !retried && !state.signingOut && (state.session.csrf !== requestCSRF || await restoreSession());
-          if (renewed) return download(path, true);
+          if (renewed) return fetchDownload(path, true);
         } catch (restoreError) { error = restoreError; }
         clearSessionToken();
         state.session.user = null;
@@ -77,6 +76,11 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
       }
       throw error;
     }
+    return response;
+  }
+  async function download(path) {
+    if (demoClient) return demoClient.demoDownload(path);
+    const response = await fetchDownload(path);
     const href = URL.createObjectURL(await response.blob());
     const link = document.createElement("a");
     link.href = href;
@@ -87,6 +91,28 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(href), 1e3);
   }
+  async function downloadBackup(id) {
+    if (demoClient) return demoClient.demoDownload('api?action=admin-backup-download');
+    const ownerUid=state.session?.user?.uid;
+    const unchanged=()=>{if(!ownerUid||state.signingOut||state.session?.user?.uid!==ownerUid)throw new Error('A sessão mudou. Inicie o download novamente.');};
+    unchanged();
+    const header=await request('admin-backup-download',{query:'&id='+encodeURIComponent(id)+'&part=manifest'});
+    unchanged();
+    if(header.manifest?.id!==id||!Array.isArray(header.manifest.parts)||header.manifest.parts.length<1||header.manifest.parts.length>1001)
+      throw new Error('Manifesto de download inválido.');
+    const pieces=[JSON.stringify({manifest:header.manifest,signature:header.signature})+'\n'];
+    for(const [index,part] of header.manifest.parts.entries()){
+      unchanged();
+      if(part.index!==index||!Number.isSafeInteger(part.bytes)||part.bytes<1||part.bytes>10*1024*1024)throw new Error('Parte de download inválida.');
+      const response=await fetchDownload('api?action=admin-backup-download&id='+encodeURIComponent(id)+'&part='+index);
+      const blob=await response.blob();unchanged();
+      if(blob.size!==part.bytes+1)throw new Error('O download está incompleto. Tente novamente.');
+      pieces.push(blob);
+    }
+    const href=URL.createObjectURL(new Blob(pieces,{type:'application/octet-stream'}));
+    const link=document.createElement('a');link.href=href;
+    link.download=('TrackenPessoas-'+id+'.tpbackup');link.click();setTimeout(()=>URL.revokeObjectURL(href),1000);
+  }
   function clearSessionToken() {
     sessionToken = null;
   }
@@ -94,7 +120,7 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     restoreSession = handlers.restoreSession;
     onSessionExpired = handlers.onSessionExpired;
   }
-  return { request, download, clearSessionToken, setRecoveryHandlers };
+  return { request, download, downloadBackup, clearSessionToken, setRecoveryHandlers };
 }
 export {
   createAPIClient
