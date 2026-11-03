@@ -1,4 +1,4 @@
-import { createAdmin } from "./features/admin/controller.mjs?v=security-auth-8-1";
+import { createAdmin } from "./features/admin/controller.mjs?v=security-appcheck-1";
 export {
   createAdmin
 };

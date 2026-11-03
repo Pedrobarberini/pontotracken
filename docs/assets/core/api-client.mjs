@@ -1,6 +1,7 @@
 function createAPIClient({ state, baseURL, demoClient, syncTime }) {
   const external = Boolean(baseURL && new URL(baseURL).origin !== location.origin);
   let sessionToken = null;
+  let appCheckTokenProvider = async () => null;
   let restoreSession = async () => false;
   let onSessionExpired = () => {
   };
@@ -31,6 +32,11 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     return Object.assign(new Error(result.error||message),{status:response.status,code:result.code,
       ...(response.status===429&&Number.isInteger(seconds)&&seconds>0&&seconds<=3600?{retryAfterSeconds:seconds}:{})});
   }
+  async function attestedOptions(action,options) {
+    if(['session','logout'].includes(action))return options;
+    const token=await appCheckTokenProvider();
+    return token ? {...options,headers:{...options.headers,'X-Firebase-AppCheck':token}} : options;
+  }
   async function request(action, { method = "GET", data = null, query = "", retried = false } = {}) {
     if (demoClient) return acceptResult(await demoClient.demoApi(action, { method, data, query }), action);
     const requestCSRF = state.session?.csrf;
@@ -41,7 +47,7 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
       options.headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(data);
     }
-    const response = await fetch(requestURL(`api?action=${encodeURIComponent(action)}${query}`), requestOptions(options));
+    const response = await fetch(requestURL(`api?action=${encodeURIComponent(action)}${query}`), requestOptions(await attestedOptions(action,options)));
     let result;
     try {
       result = await response.json();
@@ -66,7 +72,7 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
   }
   async function fetchDownload(path, retried = false) {
     const requestCSRF = state.session?.csrf;
-    const response = await fetch(requestURL(path), requestOptions());
+    const response = await fetch(requestURL(path), requestOptions(await attestedOptions('download',{})));
     if (!response.ok) {
       let result = {};
       try { result = await response.json(); } catch {}
@@ -129,7 +135,8 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     restoreSession = handlers.restoreSession;
     onSessionExpired = handlers.onSessionExpired;
   }
-  return { request, download, downloadBackup, clearSessionToken, setRecoveryHandlers };
+  function setAppCheckTokenProvider(provider) { appCheckTokenProvider = provider; }
+  return { request, download, downloadBackup, clearSessionToken, setRecoveryHandlers, setAppCheckTokenProvider };
 }
 export {
   createAPIClient

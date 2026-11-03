@@ -2,7 +2,7 @@ async function exchangeFirebaseLogin(user, { exchange, signOut, forceRefresh = f
   try {
     await exchange(await user.getIdToken(forceRefresh));
   } catch (error) {
-    if ([401, 403].includes(error.status) || ["auth/user-disabled", "auth/user-token-expired", "auth/invalid-user-token"].includes(error.code)) await signOut();
+    if (!["APP_CHECK_REQUIRED", "APP_CHECK_INVALID", "APP_CHECK_UNAVAILABLE"].includes(error.code) && ([401, 403].includes(error.status) || ["auth/user-disabled", "auth/user-token-expired", "auth/invalid-user-token"].includes(error.code))) await signOut();
     throw error;
   }
 }

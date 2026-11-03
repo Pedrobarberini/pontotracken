@@ -1,9 +1,9 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=security-auth-8-1";
-import { $, busy } from "../../shared/dom.mjs?v=security-auth-8-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=security-auth-8-1";
-import { createPasswordAccount } from "./password-policy.mjs?v=security-auth-8-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=security-appcheck-1";
+import { $, busy } from "../../shared/dom.mjs?v=security-appcheck-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=security-appcheck-1";
+import { createPasswordAccount } from "./password-policy.mjs?v=security-appcheck-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
-  const { firebaseAuth } = createFirebaseIdentity(state);
+  const { firebaseAuth, getAppCheckToken } = createFirebaseIdentity(state);
   function loginExchange() {
     return { exchange: (idToken) => api("login", { method: "POST", data: { idToken } }), signOut: () => state.authModule.signOut(state.auth) };
   }
@@ -175,7 +175,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
   }
   $("#logout").onclick = logout;
   $("#mobile-logout").onclick = logout;
-  return { firebaseAuth, restoreSession, authError, setAuthMode };
+  return { firebaseAuth, getAppCheckToken, restoreSession, authError, setAuthMode };
 }
 export {
   createAuthentication

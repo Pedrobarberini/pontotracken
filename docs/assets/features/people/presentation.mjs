@@ -1,4 +1,4 @@
-import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=security-auth-8-1';
+import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=security-appcheck-1';
 
 export const eventTypes = {
   orientation: 'Orientação', feedback: 'Feedback', improvement: 'Melhoria',

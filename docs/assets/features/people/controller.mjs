@@ -1,6 +1,6 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=security-auth-8-1';
-import { roleNames } from './presentation.mjs?v=security-auth-8-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=security-auth-8-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=security-appcheck-1';
+import { roleNames } from './presentation.mjs?v=security-appcheck-1';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=security-appcheck-1';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';
