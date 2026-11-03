@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=security-appcheck-1";
+import { startApplication } from "./application/bootstrap.mjs?v=monitoring-1";
 startApplication();

@@ -1,4 +1,4 @@
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./core/auth/persistent-login.mjs?v=security-appcheck-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./core/auth/persistent-login.mjs?v=monitoring-1";
 export {
   exchangeFirebaseLogin,
   restoreFirebaseLogin

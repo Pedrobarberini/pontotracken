@@ -1,11 +1,12 @@
-import { journeyDemo } from "./journey.mjs?v=security-appcheck-1";
-import { provenanceDemo } from "./provenance.mjs?v=security-appcheck-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=security-appcheck-1";
-import { createHrDemo } from "./hr.mjs?v=security-appcheck-1";
-import { createDevelopmentDemo } from "./development.mjs?v=security-appcheck-1";
-import { createRegistrationsDemo } from "./registrations.mjs?v=security-appcheck-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=security-appcheck-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=security-appcheck-1";
+import { journeyDemo } from "./journey.mjs?v=monitoring-1";
+import { provenanceDemo } from "./provenance.mjs?v=monitoring-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=monitoring-1";
+import { createHrDemo } from "./hr.mjs?v=monitoring-1";
+import { createDevelopmentDemo } from "./development.mjs?v=monitoring-1";
+import { createRegistrationsDemo } from "./registrations.mjs?v=monitoring-1";
+import { monitoringDemoSnapshot } from "./monitoring.mjs?v=monitoring-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=monitoring-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=monitoring-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
@@ -185,6 +186,7 @@ async function legacyDemoApi(action, { data = null, query = "" } = {}) {
   if (action === "demo-persona") return {user:peopleDemo.select(data?.uid)};
   if (action.startsWith("admin-") && peopleDemo.sessionUser().role !== "admin") error("Acesso restrito ao administrador.",403);
   if(action==='admin-backups')return {demo:true,configured:false,manual:true,rows:[],nextOffset:null};
+  if(action==='admin-monitoring')return monitoringDemoSnapshot();
   if(action.startsWith('admin-backup-'))error('O demonstrativo não gera nem baixa backups de contas reais.',403);
   if (action === "admin-registrations" || action.startsWith("admin-registration-")) return registrationsDemo(action,{data:data||{},query});
   if (action.startsWith("people-")) return peopleDemo.request(action,{data:data||{},query});

@@ -1,4 +1,4 @@
-import { createAppCheckClient } from './app-check.mjs?v=security-appcheck-1';
+import { createAppCheckClient } from './app-check.mjs?v=monitoring-1';
 function createFirebaseIdentity(state) {
   const attestation = createAppCheckClient();
   async function firebaseAuth() {

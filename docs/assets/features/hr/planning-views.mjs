@@ -1,5 +1,5 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=security-appcheck-1';
-import {findDemandWarnings} from '../../vendor/hr-planning.mjs?v=security-appcheck-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=monitoring-1';
+import {findDemandWarnings} from '../../vendor/hr-planning.mjs?v=monitoring-1';
 
 const dateLabel=value=>new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
 const activeNotices=result=>(result.notices?.rows||[]).filter(row=>row.status==='active');
