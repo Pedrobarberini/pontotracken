@@ -26,6 +26,11 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     syncTime(result.serverTime);
     return result;
   }
+  function responseError(response,result,message) {
+    const seconds=Number(result.retryAfterSeconds||response.headers.get('Retry-After'));
+    return Object.assign(new Error(result.error||message),{status:response.status,code:result.code,
+      ...(response.status===429&&Number.isInteger(seconds)&&seconds>0&&seconds<=3600?{retryAfterSeconds:seconds}:{})});
+  }
   async function request(action, { method = "GET", data = null, query = "", retried = false } = {}) {
     if (demoClient) return acceptResult(await demoClient.demoApi(action, { method, data, query }), action);
     const requestCSRF = state.session?.csrf;
@@ -44,12 +49,13 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
       throw new Error("O servidor não respondeu corretamente. Tente novamente.");
     }
     if (response.ok) return acceptResult(result, action);
-    let error = Object.assign(new Error(result.error || "Não foi possível concluir a ação."), { status: response.status, code: result.code });
+    let error = responseError(response,result,"Não foi possível concluir a ação.");
     if (response.status === 401 && state.session?.user && !["login", "session", "logout"].includes(action)) {
       try {
         const renewed = !retried && !state.signingOut && (state.session.csrf !== requestCSRF || await restoreSession());
         if (renewed) return request(action, { method, data, query, retried: true });
       } catch (restoreError) {
+        if (restoreError.status === 429) throw restoreError;
         error = restoreError;
       }
       clearSessionToken();
@@ -64,12 +70,15 @@ function createAPIClient({ state, baseURL, demoClient, syncTime }) {
     if (!response.ok) {
       let result = {};
       try { result = await response.json(); } catch {}
-      let error = Object.assign(new Error(result.error || "Não foi possível baixar o arquivo."), { status: response.status });
+      let error = responseError(response,result,"Não foi possível baixar o arquivo.");
       if (response.status === 401 && state.session?.user) {
         try {
           const renewed = !retried && !state.signingOut && (state.session.csrf !== requestCSRF || await restoreSession());
           if (renewed) return fetchDownload(path, true);
-        } catch (restoreError) { error = restoreError; }
+        } catch (restoreError) {
+          if (restoreError.status === 429) throw restoreError;
+          error = restoreError;
+        }
         clearSessionToken();
         state.session.user = null;
         onSessionExpired();

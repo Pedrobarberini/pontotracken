@@ -1,5 +1,5 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=manual-backup-1';
-import {demandNotices,demandWarnings,demandWarningsView} from './planning-views.mjs?v=manual-backup-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=security-api-1';
+import {demandNotices,demandWarnings,demandWarningsView} from './planning-views.mjs?v=security-api-1';
 
 const dateLabel=value=>new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
 function validDate(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return false;const date=new Date(value+'T12:00:00Z');return !Number.isNaN(date.valueOf())&&date.toISOString().slice(0,10)===value;}

@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=manual-backup-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=security-api-1';
 
 const labels={preparing:'Preparando banco',copying:'Copiando documentos',ready:'Pronto para baixar',failed:'Não concluído',cancelled:'Cancelado'};
 const bytes=value=>{const unit=value>=1024*1024?'MB':value>=1024?'KB':'B';const divisor=unit==='MB'?1024*1024:unit==='KB'?1024:1;return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(value/divisor)+' '+unit;};
