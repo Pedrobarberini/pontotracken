@@ -1,5 +1,5 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=security-api-1";
-import { formatInstant } from "../../shared/formatters.mjs?v=security-api-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=security-auth-1";
+import { formatInstant } from "../../shared/formatters.mjs?v=security-auth-1";
 function createOvertimePresentation({ hours, getUser, statusNames }) {
   const when = (value) => formatInstant(value, "short");
   const legacy = (row) => row.requested_work == null;

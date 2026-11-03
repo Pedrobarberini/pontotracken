@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=security-api-1";
+import { $ } from "../../shared/dom.mjs?v=security-auth-1";
 
 /** Administrative permission is independent from access approval and the employee's RH role. */
 export function createAccountRole({ api, toast, getUser, onChanged }) {

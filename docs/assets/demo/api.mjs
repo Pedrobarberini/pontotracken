@@ -1,11 +1,11 @@
-import { journeyDemo } from "./journey.mjs?v=security-api-1";
-import { provenanceDemo } from "./provenance.mjs?v=security-api-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=security-api-1";
-import { createHrDemo } from "./hr.mjs?v=security-api-1";
-import { createDevelopmentDemo } from "./development.mjs?v=security-api-1";
-import { createRegistrationsDemo } from "./registrations.mjs?v=security-api-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=security-api-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=security-api-1";
+import { journeyDemo } from "./journey.mjs?v=security-auth-1";
+import { provenanceDemo } from "./provenance.mjs?v=security-auth-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=security-auth-1";
+import { createHrDemo } from "./hr.mjs?v=security-auth-1";
+import { createDevelopmentDemo } from "./development.mjs?v=security-auth-1";
+import { createRegistrationsDemo } from "./registrations.mjs?v=security-auth-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=security-auth-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=security-auth-1";
 const hrDemo = createHrDemo({peopleDemo});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});

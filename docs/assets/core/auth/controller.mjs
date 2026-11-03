@@ -1,6 +1,7 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=security-api-1";
-import { $, busy } from "../../shared/dom.mjs?v=security-api-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=security-api-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=security-auth-1";
+import { $, busy } from "../../shared/dom.mjs?v=security-auth-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=security-auth-1";
+import { createPasswordAccount } from "./password-policy.mjs?v=security-auth-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
   const { firebaseAuth } = createFirebaseIdentity(state);
   function loginExchange() {
@@ -19,7 +20,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
     return state.restorePromise;
   }
   function authError(error) {
-    return { "auth/invalid-credential": "E-mail ou senha incorretos.", "auth/user-disabled": "Sua conta foi desativada. Fale com a empresa.", "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos.", "auth/network-request-failed": "Confira sua conexão e tente novamente.", "auth/invalid-email": "Digite um e-mail válido.", "auth/unauthorized-domain": "O domínio do site precisa ser autorizado no Firebase.", "auth/email-already-in-use": "Este e-mail já tem uma conta. Entre com sua senha ou use o Google.", "auth/weak-password": "Use uma senha mais forte, com pelo menos 6 caracteres e de acordo com as regras da empresa.", "auth/password-does-not-meet-requirements": "A senha não atende às regras de segurança da empresa.", "auth/popup-blocked": "Permita a abertura de janelas para este site e tente entrar com Google novamente.", "auth/popup-closed-by-user": "O login com Google foi cancelado. Você pode tentar novamente.", "auth/cancelled-popup-request": "Já existe uma janela de login aberta. Conclua o acesso nela.", "auth/operation-not-allowed": "Este método de login precisa ser ativado no Firebase.", "auth/account-exists-with-different-credential": "Este e-mail já usa outro método de acesso. Entre com o método que você usou no cadastro." }[error.code] || error.message || "Não foi possível concluir o acesso.";
+    return { "auth/invalid-credential": "E-mail ou senha incorretos.", "auth/user-disabled": "Sua conta foi desativada. Fale com a empresa.", "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos.", "auth/network-request-failed": "Confira sua conexão e tente novamente.", "auth/invalid-email": "Digite um e-mail válido.", "auth/unauthorized-domain": "O domínio do site precisa ser autorizado no Firebase.", "auth/email-already-in-use": "Este e-mail já tem uma conta. Entre com sua senha ou use o Google.", "auth/weak-password": "Escolha uma senha longa e exclusiva, de acordo com as regras da empresa.", "auth/password-does-not-meet-requirements": "A senha não atende às regras de segurança da empresa.", "auth/popup-blocked": "Permita a abertura de janelas para este site e tente entrar com Google novamente.", "auth/popup-closed-by-user": "O login com Google foi cancelado. Você pode tentar novamente.", "auth/cancelled-popup-request": "Já existe uma janela de login aberta. Conclua o acesso nela.", "auth/operation-not-allowed": "Este método de login precisa ser ativado no Firebase.", "auth/account-exists-with-different-credential": "Este e-mail já usa outro método de acesso. Entre com o método que você usou no cadastro." }[error.code] || error.message || "Não foi possível concluir o acesso.";
   }
   function clearAuthMessages() {
     $("#login-error").hidden = true;
@@ -38,8 +39,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
     $("#register-note").hidden = !register;
     $("#reset-password").hidden = register;
     $("#password").autocomplete = register ? "new-password" : "current-password";
-    if (register) $("#password").minLength = 6;
-    else $("#password").removeAttribute("minlength");
+    $("#password").removeAttribute("minlength");
     $("#password").value = "";
     $("#password").type = "password";
     $("#confirm-password").value = "";
@@ -91,7 +91,7 @@ function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, sh
     try {
       await authenticationWork($("#login-submit"), async () => {
         const [auth, mod] = await firebaseAuth();
-        const credential = await (register ? mod.createUserWithEmailAndPassword(auth, email, password) : mod.signInWithEmailAndPassword(auth, email, password));
+        const credential = await (register ? createPasswordAccount(auth, mod, email, password) : mod.signInWithEmailAndPassword(auth, email, password));
         await finishLogin(credential, register);
       }, register ? "Criando conta…" : "Entrando…");
     } catch (error) {

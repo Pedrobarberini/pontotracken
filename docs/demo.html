@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#68b42e"><meta name="description" content="Gestão de pessoas, documentos, férias e desenvolvimento em um só lugar.">
   <title>Tracken Pessoas · Gestão de pessoas</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=security-api-1">
-  <script type="module" src="assets/app.js?v=security-api-1"></script>
+  <link rel="stylesheet" href="assets/style.css?v=security-auth-1">
+  <script type="module" src="assets/app.js?v=security-auth-1"></script>
 </head>
 <body data-mode="demo" data-attendance="false">
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title"><strong>Track<span>en</span></strong> Pessoas</p><p class="boot-copy">Carregando seu espaço…</p></div>
@@ -27,7 +27,7 @@
         <div class="password-label"><label for="password">Senha</label><button class="text-button" type="button" id="reset-password">Esqueci minha senha</button></div>
         <div class="password-field"><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required><button id="toggle-password" type="button" aria-label="Mostrar senha"><svg class="icon"><use href="assets/icons.svg#eye"/></svg></button></div>
         <div id="confirm-password-field" class="register-field" hidden><label for="confirm-password">Confirmar senha</label><input id="confirm-password" type="password" autocomplete="new-password" placeholder="Digite a senha novamente" disabled></div>
-        <p id="register-note" class="field-hint" hidden>Use pelo menos 6 caracteres. Após o cadastro, aguarde a autorização da empresa.</p>
+        <p id="register-note" class="field-hint" hidden>Use pelo menos 15 caracteres. Prefira uma frase longa e exclusiva. Após o cadastro, aguarde a autorização da empresa.</p>
         <button id="login-submit" class="button primary full" type="submit">Entrar</button>
         <p id="login-error" class="form-message" role="alert" hidden></p>
         <p id="auth-message" class="form-success" role="status" aria-live="polite" hidden></p>

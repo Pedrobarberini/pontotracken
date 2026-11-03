@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=security-api-1";
+import { startApplication } from "./application/bootstrap.mjs?v=security-auth-1";
 startApplication();
