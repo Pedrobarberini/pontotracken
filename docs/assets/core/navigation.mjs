@@ -1,5 +1,5 @@
-import { $, $$ } from "../shared/dom.mjs?v=integrity-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=integrity-1";
+import { $, $$ } from "../shared/dom.mjs?v=hr-operations-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=hr-operations-1";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {
@@ -58,13 +58,14 @@ function createNavigation({ state, onView }) {
   }
   function switchView(view, load = true) {
     const enabled = refreshAccess();
-    if (!["registro", "espelho", "importar", "jornada", "admin", "visao", "ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores"].includes(view)) view = defaultView(state);
+    if (!["registro", "espelho", "importar", "jornada", "admin", "visao", "ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores", "relatorios"].includes(view)) view = defaultView(state);
     if (ATTENDANCE_VIEWS.includes(view) && !enabled) view = defaultView(state);
+    if(view === "relatorios" && !["admin","hr"].includes(state.peopleContext?.role)) view="ficha";
     if (view === "admin" && state.session?.user?.role !== "admin") view = defaultView(state);
     if (["pessoas", "gestao", "indicadores"].includes(view) && !state.peopleContext?.canManagePeople) view = "ficha";
     setMenu(false, $("#menu-toggle").getAttribute("aria-expanded") === "true");
     state.view = view;
-    const names = { registro: "Meu ponto", espelho: "Espelho de ponto", importar: "Importar planilha", jornada: "Status e horas extras", admin: "Administração", visao: "Visão do produto", ficha: "Ficha do colaborador", pessoas: "Colaboradores", gestao: "Início da gestão", ausencias: "Férias e ausências", ciclo: "Admissão e desligamento", desenvolvimento: "Desenvolvimento", indicadores: "Indicadores" };
+    const names = { registro: "Meu ponto", espelho: "Espelho de ponto", importar: "Importar planilha", jornada: "Status e horas extras", admin: "Administração", visao: "Visão do produto", ficha: "Ficha do colaborador", pessoas: "Colaboradores", gestao: "Início da gestão", ausencias: "Férias e ausências", ciclo: "Admissão e desligamento", desenvolvimento: "Desenvolvimento", indicadores: "Indicadores", relatorios: "Relatórios" };
     for (const el of $$(".view")) el.hidden = el.id !== `view-${view}`;
     for (const btn of $$("[data-view]")) {
       const active = btn.dataset.view === view;
@@ -73,7 +74,7 @@ function createNavigation({ state, onView }) {
       else btn.removeAttribute("aria-current");
     }
     $("#breadcrumb-view").textContent = names[view];
-    $("#breadcrumb-group").textContent = ["ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores"].includes(view) ? "Gestão de pessoas" : ["admin", "visao"].includes(view) ? "Empresa" : "Minha jornada";
+    $("#breadcrumb-group").textContent = ["ficha", "pessoas", "gestao", "ausencias", "ciclo", "desenvolvimento", "indicadores", "relatorios"].includes(view) ? "Gestão de pessoas" : ["admin", "visao"].includes(view) ? "Empresa" : "Minha jornada";
     history.replaceState(null, "", `#${view}`);
     if (load) window.scrollTo({ top: 0, behavior: "instant" });
     if (load) onView(view);

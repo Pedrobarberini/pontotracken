@@ -1,13 +1,15 @@
-import { journeyDemo } from "./journey.mjs?v=integrity-1";
-import { provenanceDemo } from "./provenance.mjs?v=integrity-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=integrity-1";
-import { createHrDemo } from "./hr.mjs?v=integrity-1";
-import { createDevelopmentDemo } from "./development.mjs?v=integrity-1";
-import { createRegistrationsDemo } from "./registrations.mjs?v=integrity-1";
-import { monitoringDemoSnapshot, documentIntegrityDemoPage } from "./monitoring.mjs?v=integrity-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=integrity-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=integrity-1";
-const hrDemo = createHrDemo({peopleDemo});
+import {administrativeDemoReport} from './administrative-reports.mjs?v=hr-operations-1';
+import {emailNotificationsDemo} from './email-notifications.mjs?v=hr-operations-1';
+import { journeyDemo } from "./journey.mjs?v=hr-operations-1";
+import { provenanceDemo } from "./provenance.mjs?v=hr-operations-1";
+import { peopleDemo, demoActors } from "./people.mjs?v=hr-operations-1";
+import { createHrDemo } from "./hr.mjs?v=hr-operations-1";
+import { createDevelopmentDemo } from "./development.mjs?v=hr-operations-1";
+import { createRegistrationsDemo } from "./registrations.mjs?v=hr-operations-1";
+import { monitoringDemoSnapshot, documentIntegrityDemoPage } from "./monitoring.mjs?v=hr-operations-1";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=hr-operations-1";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=hr-operations-1";
+const hrDemo = createHrDemo({peopleDemo,blockAccount:async uid=>{const context={actorUid:peopleDemo.sessionUser().uid,dateNow},user=journeyDemo('demo-directory',context).users.find(row=>row.uid===uid);if(!user)throw new Error('Conta de demonstração não encontrada.');const response=journeyDemo('admin-access',{...context,data:{uid,status:'blocked',version:user.version}});peopleDemo.synchronizeAccount(response.user);}});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});
 const hrDevelopmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, includeAttendance:false});
@@ -186,6 +188,8 @@ async function legacyDemoApi(action, { data = null, query = "" } = {}) {
   if (action === "demo-persona") return {user:peopleDemo.select(data?.uid)};
   if (action.startsWith("admin-") && peopleDemo.sessionUser().role !== "admin") error("Acesso restrito ao administrador.",403);
   if(action==='admin-backups')return {demo:true,configured:false,manual:true,rows:[],nextOffset:null};
+  if(['hr-report-directory','hr-administrative-report'].includes(action))return administrativeDemoReport(action,{query,peopleDemo,hrDemo,developmentDemo:hrDevelopmentDemo});
+  if(['admin-email-notifications','admin-email-process'].includes(action))return emailNotificationsDemo(action);
   if(action==='admin-monitoring')return monitoringDemoSnapshot();
   if(action==='admin-document-integrity')return documentIntegrityDemoPage(new URLSearchParams(query));
   if(action.startsWith('admin-backup-'))error('O demonstrativo não gera nem baixa backups de contas reais.',403);

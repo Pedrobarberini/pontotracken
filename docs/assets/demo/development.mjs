@@ -1,5 +1,5 @@
-import { journeyMetrics } from '../vendor/journey-metrics.mjs?v=integrity-1';
-import { calendarContext } from '../calendar.mjs?v=integrity-1';
+import { journeyMetrics } from '../vendor/journey-metrics.mjs?v=hr-operations-1';
+import { calendarContext } from '../calendar.mjs?v=hr-operations-1';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const text=(value,min,max)=>{if(typeof value!=='string'||value.trim().length<min||value.trim().length>max)fail('Preencha os campos e respeite os limites informados.');return value.trim();};
 const date=value=>{if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T12:00:00Z'))||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)fail('Data inválida.');return value;};
@@ -88,5 +88,5 @@ export function createDevelopmentDemo({peopleDemo,hrDemo,clock=()=>new Date(),ge
     }
     fail('Ação de desenvolvimento indisponível.',404);
   }
-  return {request};
+  return {request,async reportReviews(){const context=await scope();if(!context.privileged)fail('Relatórios restritos ao RH e ADMIN.',403);return [...reviews.values()].map(row=>({...row,comment:undefined,personName:person(context,row.uid).name,reviewerName:person(context,row.reviewerUid).name,cycle:cycles.get(row.cycleId)}));}};
 }

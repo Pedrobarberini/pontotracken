@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=integrity-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=hr-operations-1';
 
 const countNames=['documents','objects','matched','missing','mismatched','unverified','unreferenced','recent','invalid'];
 const emptyCounts=()=>Object.fromEntries(countNames.map(key=>[key,0]));

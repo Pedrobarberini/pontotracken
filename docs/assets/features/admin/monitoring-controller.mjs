@@ -1,6 +1,6 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=integrity-1';
-import {homologationPlan,homologationCSV} from './homologation-plan.mjs?v=integrity-1';
-import {createDocumentIntegrity} from './document-integrity-controller.mjs?v=integrity-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=hr-operations-1';
+import {homologationPlan,homologationCSV} from './homologation-plan.mjs?v=hr-operations-1';
+import {createDocumentIntegrity} from './document-integrity-controller.mjs?v=hr-operations-1';
 const styles={ok:'monitor-ok',info:'monitor-info',warning:'monitor-warning',error:'monitor-error',not_checked:'monitor-warning'};
 const labels={ok:'Disponível',info:'Informativo',warning:'Atenção',error:'Verificar',not_checked:'Não verificado'};
 const requestLabels={valid:'Verificado nesta solicitação',missing:'Sem atestação nesta solicitação',invalid:'Atestação inválida nesta solicitação',unavailable:'Verificação temporariamente indisponível',skipped:'Não aplicada nesta solicitação'};

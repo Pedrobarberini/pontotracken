@@ -10,6 +10,10 @@ export const homologationPlan=Object.freeze([
   {id:'H09',area:'Administração',environment:'Demo',steps:'Conceder e remover ADMIN de conta fictícia; bloquear e excluir um acesso de teste.',expected:'Confirmações e auditoria presentes; próprio e último ADMIN protegidos.'},
   {id:'H10',area:'Backup e recuperação',environment:'Laboratório local',steps:'Gerar e restaurar uma cópia sintética; conferir integridade e arquivos.',expected:'Recuperação isolada aprovada, sem sobrescrever a aplicação publicada.'},
   {id:'H11',area:'Monitoramento',environment:'Demo e aplicativo',steps:'Atualizar e baixar o diagnóstico; executar a conferência de documentos, interromper, continuar e baixar o relatório; comparar demo com ambiente real.',expected:'Resultados parciais e simulados explícitos; referências técnicas sem credenciais ou dados pessoais; nenhuma exclusão automática.'},
+  {id:'H13',area:'Aquisição de férias',environment:'Demo e base de homologação',steps:'Configurar base individual 30/12 e verificar aniversário, ajuste, pausa e saldo manual.',expected:'Concessão somente após ciclos completos; sem duplicidade; ajuste auditado preserva reservas.'},
+  {id:'H14',area:'Relatórios',environment:'Demo e contas de teste',steps:'Exportar PDF e Excel por período e pessoa; comparar RH, ADMIN e colaborador.',expected:'Arquivos legíveis e coerentes; permissão restrita; notas de rascunho e conteúdo privado excluídos.'},
+  {id:'H15',area:'Notificações',environment:'Demo e base de homologação',steps:'Preparar fila com envio desativado, repetir ação e conferir indicadores.',expected:'Nenhum e-mail enviado; duplicidades evitadas; fila e estado desativado explícitos.'},
+  {id:'H16',area:'Desligamento e acesso',environment:'Demo e contas de teste',steps:'Concluir checklist e encerrar com ADMIN; verificar bloqueio e sessão de teste.',expected:'Confirmação explícita, bloqueio e auditoria juntos; próprio e outros ADMIN protegidos.'},
   {id:'H12',area:'Interface',environment:'Demo e aplicativo',steps:'Navegar em desktop e celular; testar teclado, mensagens e erro de conexão.',expected:'Conteúdo legível, ações acessíveis e possibilidade de tentar novamente.'}
 ]);
 

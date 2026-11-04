@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#68b42e"><meta name="description" content="Gestão de pessoas, documentos, férias e desenvolvimento em um só lugar.">
   <title>Tracken Pessoas · Gestão de pessoas</title>
   <link rel="icon" href="assets/pontotracken-mark-v2.webp" type="image/webp">
-  <link rel="stylesheet" href="assets/style.css?v=integrity-1">
-  <script type="module" src="assets/app.js?v=integrity-1"></script>
+  <link rel="stylesheet" href="assets/style.css?v=hr-operations-1">
+  <script type="module" src="assets/app.js?v=hr-operations-1"></script>
 </head>
 <body>
 <div id="boot" class="boot" role="status" aria-live="polite"><div class="boot-loader" aria-hidden="true"><img src="assets/pontotracken-mark-v2.webp" width="80" height="80" alt="" fetchpriority="high"></div><p class="boot-title"><strong>Track<span>en</span></strong> Pessoas</p><p class="boot-copy">Carregando seu espaço…</p></div>
@@ -60,6 +60,7 @@
       <button id="management-nav" data-view="gestao" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#calendar-check"/></svg>Início da gestão</button>
       <button id="people-nav" data-view="pessoas" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#file"/></svg>Colaboradores</button>
       <button id="indicators-nav" data-view="indicadores" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#calendar-check"/></svg>Indicadores</button>
+      <button id="reports-nav" data-view="relatorios" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#file"/></svg>Relatórios</button>
       <button id="admin-nav" data-view="admin" class="nav-button" hidden><svg class="icon"><use href="assets/icons.svg#shield"/></svg>Administração</button>
       <button data-view="visao" class="nav-button"><svg class="icon"><use href="assets/icons.svg#file"/></svg>Visão do produto</button>
     </nav>
@@ -103,7 +104,7 @@
       <section id="view-jornada" class="view" data-attendance-view hidden inert><div class="page-heading"><div><span class="eyebrow muted">MINHA JORNADA</span><h1>Status e horas extras<span>.</span></h1><p>Acompanhe sua atividade e registre os períodos adicionais.</p></div></div><div id="journey-tools"></div></section>
       <section id="view-admin" class="view" hidden>
         <div class="page-heading"><div><span class="eyebrow muted">GESTÃO DA EMPRESA</span><h1>Administração<span>.</span></h1><p>Gerencie os acessos e as permissões da equipe.</p></div><span class="admin-badge">Acesso ADMIN</span></div>
-        <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="team" data-attendance-control hidden class="active" aria-pressed="true">Visão da equipe</button><button data-admin-tab="users" aria-pressed="false">Funcionários</button><button data-admin-tab="registrations" aria-pressed="false">Novos colaboradores</button><button data-admin-tab="records" data-attendance-control hidden aria-pressed="false">Ajustar ponto</button><button data-admin-tab="backups" aria-pressed="false">Backups</button><button data-admin-tab="monitoring" aria-pressed="false">Monitoramento</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
+        <div class="admin-tabs" role="group" aria-label="Áreas da administração"><button data-admin-tab="team" data-attendance-control hidden class="active" aria-pressed="true">Visão da equipe</button><button data-admin-tab="users" aria-pressed="false">Funcionários</button><button data-admin-tab="registrations" aria-pressed="false">Novos colaboradores</button><button data-admin-tab="records" data-attendance-control hidden aria-pressed="false">Ajustar ponto</button><button data-admin-tab="backups" aria-pressed="false">Backups</button><button data-admin-tab="monitoring" aria-pressed="false">Monitoramento</button><button data-admin-tab="email" aria-pressed="false">Notificações</button><button data-admin-tab="history" aria-pressed="false">Histórico de alterações</button></div>
         <div id="team-panel"></div>
         <div id="admin-error" class="data-error" role="alert" hidden></div>
         <section id="admin-panel-users" class="admin-panel" hidden>
@@ -115,6 +116,7 @@
         </section>
         <section id="admin-panel-registrations" class="admin-panel" hidden></section>
         <section id="admin-panel-backups" class="admin-panel" hidden></section>
+        <section id="admin-panel-email" class="admin-panel" hidden></section>
         <section id="admin-panel-monitoring" class="admin-panel" hidden></section>
         <section id="admin-panel-records" class="admin-panel" hidden>
           <form id="admin-record-filter" class="admin-toolbar"><div class="admin-field grow"><label for="admin-record-search">Buscar nome ou e-mail</label><input id="admin-record-search" type="search" placeholder="Buscar na equipe" maxlength="180"></div><button class="button secondary" type="submit">Buscar funcionário</button></form>
@@ -135,6 +137,7 @@
       <section id="view-ausencias" class="view" hidden><div id="hr-absences-content" aria-live="polite"></div></section>
       <section id="view-ciclo" class="view" hidden><div id="hr-lifecycle-content" aria-live="polite"></div></section>
       <section id="view-desenvolvimento" class="view" hidden><div id="development-content" aria-live="polite"></div></section>
+      <section id="view-relatorios" class="view" hidden><div class="page-heading"><div><span class="eyebrow muted">DADOS PARA A GESTÃO</span><h1>Relatórios<span>.</span></h1><p>Consolide os dados administrativos com filtros e formatos de exportação.</p></div></div><div id="administrative-reports-content"></div></section>
       <section id="view-indicadores" class="view" hidden><div id="people-indicators-content" aria-live="polite"></div></section>
       <section id="view-visao" class="view" hidden>
         <div class="page-heading"><div><h1>Visão do produto<span>.</span></h1><p>Uma plataforma para acompanhar a vida do colaborador na empresa.</p></div></div>

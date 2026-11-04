@@ -1,24 +1,25 @@
-import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=integrity-1";
-import { hours, createDateFormatters } from "../shared/formatters.mjs?v=integrity-1";
-import { createRecordsTable } from "../shared/records-table.mjs?v=integrity-1";
-import { createApplicationState } from "../core/state.mjs?v=integrity-1";
-import { createClock } from "../core/clock.mjs?v=integrity-1";
-import { createAPIClient } from "../core/api-client.mjs?v=integrity-1";
-import { createAuthentication } from "../core/auth/controller.mjs?v=integrity-1";
-import { createNavigation } from "../core/navigation.mjs?v=integrity-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView, isAttendanceAction } from "../core/features.mjs?v=integrity-1";
-import { createAttendance } from "../features/attendance/controller.mjs?v=integrity-1";
-import { createHistory } from "../features/history/controller.mjs?v=integrity-1";
-import { createSpreadsheetImport } from "../features/import/controller.mjs?v=integrity-1";
-import { createAdmin } from "../features/admin/controller.mjs?v=integrity-1";
-import { createJourney } from "../features/journey/controller.mjs?v=integrity-1";
-import { createPeople } from "../features/people/controller.mjs?v=integrity-1";
-import { createHR } from "../features/hr/controller.mjs?v=integrity-1";
-import { createDevelopment } from "../features/development/controller.mjs?v=integrity-1";
-import { apiBase, demoHref } from "../connection.js?v=integrity-1";
+import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=hr-operations-1";
+import { hours, createDateFormatters } from "../shared/formatters.mjs?v=hr-operations-1";
+import { createRecordsTable } from "../shared/records-table.mjs?v=hr-operations-1";
+import { createApplicationState } from "../core/state.mjs?v=hr-operations-1";
+import { createClock } from "../core/clock.mjs?v=hr-operations-1";
+import { createAPIClient } from "../core/api-client.mjs?v=hr-operations-1";
+import { createAuthentication } from "../core/auth/controller.mjs?v=hr-operations-1";
+import { createNavigation } from "../core/navigation.mjs?v=hr-operations-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView, isAttendanceAction } from "../core/features.mjs?v=hr-operations-1";
+import { createAttendance } from "../features/attendance/controller.mjs?v=hr-operations-1";
+import { createHistory } from "../features/history/controller.mjs?v=hr-operations-1";
+import { createSpreadsheetImport } from "../features/import/controller.mjs?v=hr-operations-1";
+import { createAdmin } from "../features/admin/controller.mjs?v=hr-operations-1";
+import { createJourney } from "../features/journey/controller.mjs?v=hr-operations-1";
+import { createPeople } from "../features/people/controller.mjs?v=hr-operations-1";
+import { createHR } from "../features/hr/controller.mjs?v=hr-operations-1";
+import { createDevelopment } from "../features/development/controller.mjs?v=hr-operations-1";
+import {createAdministrativeReports} from "../features/reports/controller.mjs?v=hr-operations-1";
+import { apiBase, demoHref } from "../connection.js?v=hr-operations-1";
 async function startApplication() {
   const isDemo = document.body.dataset.mode === "demo";
-  const demoClient = isDemo ? await import("../demo/api.mjs?v=integrity-1") : null;
+  const demoClient = isDemo ? await import("../demo/api.mjs?v=hr-operations-1") : null;
   const state = createApplicationState();
   state.demo = isDemo;
   const clock = createClock(state);
@@ -62,6 +63,7 @@ async function startApplication() {
   const journey = createJourney({ ...shared, getUser: () => state.session?.user });
   const people = createPeople({ ...shared, download, switchView: navigation.switchView });
   const hr = createHR({ ...shared });
+  const reports=createAdministrativeReports({host:$("#administrative-reports-content"),api,getUser:()=>state.session?.user});
   const development = createDevelopment({ ...shared });
   const authentication = createAuthentication({
     state,
@@ -80,6 +82,7 @@ async function startApplication() {
     people.reset();
     hr.reset();
     development.reset();
+    reports.reset();
     journey.reset();
     admin.reset();
     spreadsheet.invalidatePreview();
@@ -108,6 +111,7 @@ async function startApplication() {
       navigation.switchView(defaultView(state));
       return;
     }
+    if(view==="relatorios")await reports.loadPeople();
     if (["ausencias", "ciclo"].includes(view)) await hr.open(view);
     if (["desenvolvimento", "indicadores"].includes(view)) await development.open(view);
     if (["ficha", "pessoas", "gestao"].includes(view)) await people.open(view);

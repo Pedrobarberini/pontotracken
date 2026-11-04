@@ -1,6 +1,6 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=integrity-1';
-import { roleNames } from './presentation.mjs?v=integrity-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=integrity-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=hr-operations-1';
+import { roleNames } from './presentation.mjs?v=hr-operations-1';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=hr-operations-1';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';
@@ -32,6 +32,7 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
         $('#people-nav').hidden = !context.canManagePeople;
         $('#user-role').textContent = `${state.session.user.demo ? 'Demo · ' : ''}${roleNames[context.role] || 'Colaborador'}`;
         $('#management-nav').hidden = !context.canManagePeople;
+        const reportsNav=$('#reports-nav');if(reportsNav)reportsNav.hidden=!["admin","hr"].includes(context.role);
         return context;
       }).finally(() => { if (initializing === pending) initializing = null; });
       initializing = pending;
@@ -43,6 +44,7 @@ export function createPeople({ state, api, download, busy, toast, currentParts, 
     context = null; profile = null; capabilities = {}; selectedUid = ''; rows = []; tab = 'history';
     people = []; departments = []; nextOffset = listOffset = null; filter = search = department = focusedId = ''; archived = incomplete = false;
     state.peopleContext = null;
+    const reportsNav=$('#reports-nav');if(reportsNav)reportsNav.hidden=true;
     $('#people-nav').hidden = true; $('#management-nav').hidden = true;
     dialog.close(); dialog.innerHTML = '';
     for (const id of ['people-profile-content','people-list-content','people-dashboard-content']) { const root = $(`#${id}`); root.replaceChildren(); root.setAttribute('aria-busy', 'false'); }
