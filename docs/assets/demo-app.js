@@ -1,1 +1,1 @@
-import "./app.js?v=monitoring-1";
+import "./app.js?v=integrity-1";

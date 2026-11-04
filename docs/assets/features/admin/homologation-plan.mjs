@@ -9,7 +9,7 @@ export const homologationPlan=Object.freeze([
   {id:'H08',area:'Desenvolvimento',environment:'Demo',steps:'Criar ciclo e meta de teste, registrar acompanhamento e revisar indicadores.',expected:'Dados e visibilidade consistentes entre os perfis autorizados.'},
   {id:'H09',area:'Administração',environment:'Demo',steps:'Conceder e remover ADMIN de conta fictícia; bloquear e excluir um acesso de teste.',expected:'Confirmações e auditoria presentes; próprio e último ADMIN protegidos.'},
   {id:'H10',area:'Backup e recuperação',environment:'Laboratório local',steps:'Gerar e restaurar uma cópia sintética; conferir integridade e arquivos.',expected:'Recuperação isolada aprovada, sem sobrescrever a aplicação publicada.'},
-  {id:'H11',area:'Monitoramento',environment:'Demo e aplicativo',steps:'Abrir o painel, atualizar e baixar diagnóstico; comparar demo com ambiente real.',expected:'Estados explícitos, tempos de resposta e relatório sem credenciais ou dados de pessoas.'},
+  {id:'H11',area:'Monitoramento',environment:'Demo e aplicativo',steps:'Atualizar e baixar o diagnóstico; executar a conferência de documentos, interromper, continuar e baixar o relatório; comparar demo com ambiente real.',expected:'Resultados parciais e simulados explícitos; referências técnicas sem credenciais ou dados pessoais; nenhuma exclusão automática.'},
   {id:'H12',area:'Interface',environment:'Demo e aplicativo',steps:'Navegar em desktop e celular; testar teclado, mensagens e erro de conexão.',expected:'Conteúdo legível, ações acessíveis e possibilidade de tentar novamente.'}
 ]);
 

@@ -1,4 +1,4 @@
-import { createAdmin } from "./features/admin/controller.mjs?v=monitoring-1";
+import { createAdmin } from "./features/admin/controller.mjs?v=integrity-1";
 export {
   createAdmin
 };

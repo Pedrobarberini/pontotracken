@@ -1,4 +1,4 @@
-import { calendarLabel, calendarBadge, recordStatus, sourceLabel, calendarTotals, todayCalendarNote } from "./features/calendar/presentation.mjs?v=monitoring-1";
+import { calendarLabel, calendarBadge, recordStatus, sourceLabel, calendarTotals, todayCalendarNote } from "./features/calendar/presentation.mjs?v=integrity-1";
 export {
   calendarBadge,
   calendarLabel,

@@ -31,4 +31,11 @@
 .monitor-checklist li { padding:12px 0;border-bottom:1px solid var(--line); }
 .monitor-checklist p { font-size:13px;margin:6px 0; }
 .monitor-checklist small { color:var(--muted); }
+.integrity-actions { display:flex;gap:10px;flex-wrap:wrap; }
+.integrity-totals { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0; }
+.integrity-totals>div { border:1px solid var(--line);border-radius:8px;padding:14px; }
+.integrity-totals span { display:block;font-size:12px;color:var(--muted); }
+.integrity-totals strong { display:block;font-size:24px;margin-top:6px; }
+.monitoring-card code { overflow-wrap:anywhere; }
+@media(max-width:700px) { .integrity-totals { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:700px) { .monitoring-card { padding:16px; }.monitoring-card>.card-heading { flex-wrap:wrap; }.monitor-summary,.monitor-grid { grid-template-columns:1fr; }.monitor-control { grid-template-columns:1fr; }.monitor-control small { grid-column:1; } }

@@ -1,4 +1,4 @@
-import { demoApi, demoDownload, parseSpreadsheet, parseCell, minutes } from "./demo/api.mjs?v=monitoring-1";
+import { demoApi, demoDownload, parseSpreadsheet, parseCell, minutes } from "./demo/api.mjs?v=integrity-1";
 export {
   demoApi,
   demoDownload,

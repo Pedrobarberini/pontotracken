@@ -1,5 +1,5 @@
-import { escapeHTML as e } from "../../shared/dom.mjs?v=monitoring-1";
-import { registrationInvitation } from "./registration-invitation.mjs?v=monitoring-1";
+import { escapeHTML as e } from "../../shared/dom.mjs?v=integrity-1";
+import { registrationInvitation } from "./registration-invitation.mjs?v=integrity-1";
 
 const statusNames = { open: "Aguardando vínculo", linked: "Login vinculado", archived: "Arquivado" };
 const reasonField = '<label for="registration-reason">Justificativa</label><textarea id="registration-reason" name="reason" minlength="10" maxlength="1000" rows="3" required></textarea>';

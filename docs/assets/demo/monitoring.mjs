@@ -11,3 +11,11 @@ export function monitoringDemoSnapshot() {
       {id:'document-inspection',label:'Proteção de anexos',status:'info',detail:'Exemplo de inspeção de formato. Antivírus externo permanece como evolução futura.'}
     ],coverage:{database:'simulated',files:'simulated',identity:'simulated',businessApproval:'pending',externalAlerts:false}};
 }
+
+export function documentIntegrityDemoPage(input) {
+  const startedAt=input.get('startedAt')||new Date().toISOString(),revision='d'.repeat(64),objects=input.get('phase')==='objects';
+  return {schemaVersion:1,demo:true,readOnly:true,metadataOnly:true,release:'demonstration',phase:objects?'objects':'documents',startedAt,checkedAt:new Date().toISOString(),revision,totalDocuments:3,
+    counts:{documents:objects?0:3,objects:objects?4:0,matched:objects?0:2,missing:objects?0:1,mismatched:0,unverified:0,unreferenced:objects?1:0,recent:objects?1:0,invalid:0},
+    issues:objects?[{reference:'demo-arquivo-01',kind:'unreferenced',reasons:['no-reference']},{reference:'demo-arquivo-02',kind:'recent',reasons:['recent-upload']}]:[{reference:'demo-documento-01',kind:'missing',reasons:['missing-object']}],
+    complete:objects,next:objects?null:{phase:'objects',cursor:'',startedAt,revision}};
+}
