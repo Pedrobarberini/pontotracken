@@ -1,6 +1,6 @@
-import { escapeHTML as e } from '../../shared/dom.mjs?v=hr-operations-1';
-import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=hr-operations-1';
-import {fromLocalStamp} from './time.mjs?v=hr-operations-1';
+import { escapeHTML as e } from '../../shared/dom.mjs?v=meetings-1';
+import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=meetings-1';
+import {fromLocalStamp} from './time.mjs?v=meetings-1';
 
 export function createDevelopment({state,api,busy,toast}) {
   let context=null, tab='conversations', uid='', cycleId='', rows=[], cycles=[], reviews=[], nextOffset=null, reviewOffset=null, generation=0, epoch=0, range={};
@@ -69,7 +69,7 @@ export function createDevelopment({state,api,busy,toast}) {
   function edit(row=null,next=false){
     if(tab==='cycles'){show(cycleForm(context,row),'development-cycle-save',form=>({id:row?.id||undefined,version:row?.version||0,title:form.get('title'),startOn:form.get('startOn'),endOn:form.get('endOn'),participants:form.getAll('participants')}));return;}
     if(tab==='goals'){show(goalForm(context,uid,row),'development-goal-save',form=>({id:row?.id||undefined,version:row?.version||0,uid:row?.uid||form.get('uid'),title:form.get('title'),description:form.get('description'),dueOn:form.get('dueOn')}));return;}
-    show(conversationForm(context,uid,row,next),'development-conversation-save',form=>({id:!next?row?.id||undefined:undefined,version:!next?row?.version||0:0,uid:row?.uid||form.get('uid'),title:form.get('title'),scheduledAt:fromLocalStamp(form.get('scheduledAt')),cadenceDays:Number(form.get('cadenceDays'))}));
+    show(conversationForm(context,uid,row,next),'development-conversation-save',form=>({id:!next?row?.id||undefined:undefined,version:!next?row?.version||0:0,uid:row?.uid||form.get('uid'),title:form.get('title'),scheduledAt:fromLocalStamp(form.get('scheduledAt')),cadenceDays:Number(form.get('cadenceDays')),meetingUrl:form.get('meetingUrl')||null}));
   }
   function endConversation(row,status){show(conversationEndForm(row,status),'development-conversation-transition',form=>({id:row.id,version:row.version,status,notes:form.get('notes')||'',reason:form.get('reason')}));}
   function progress(row){show(progressForm(context,row),'development-goal-progress',form=>({id:row.id,version:row.version,progress:Number(form.get('progress')),status:form.get('status'),reason:form.get('reason')}));}

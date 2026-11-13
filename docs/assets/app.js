@@ -1,2 +1,2 @@
-import { startApplication } from "./application/bootstrap.mjs?v=hr-operations-1";
+import { startApplication } from "./application/bootstrap.mjs?v=meetings-1";
 startApplication();

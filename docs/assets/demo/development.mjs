@@ -1,5 +1,6 @@
-import { journeyMetrics } from '../vendor/journey-metrics.mjs?v=hr-operations-1';
-import { calendarContext } from '../calendar.mjs?v=hr-operations-1';
+import { journeyMetrics } from '../vendor/journey-metrics.mjs?v=meetings-1';
+import { calendarContext } from '../calendar.mjs?v=meetings-1';
+import {normalizeMeetingUrl} from '../vendor/meeting-link.mjs?v=meetings-1';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const text=(value,min,max)=>{if(typeof value!=='string'||value.trim().length<min||value.trim().length>max)fail('Preencha os campos e respeite os limites informados.');return value.trim();};
 const date=value=>{if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T12:00:00Z'))||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)fail('Data inválida.');return value;};
@@ -45,7 +46,7 @@ export function createDevelopmentDemo({peopleDemo,hrDemo,clock=()=>new Date(),ge
       requireManage(context,data.uid);return mutate(context,action,data,()=>{
         const before=data.id?item(context,conversations,data.id):null;if(before){version(before,data.version);if(before.status!=='scheduled'||before.uid!==data.uid)fail('Esta conversa já foi encerrada.',409);}else integer(data.version,0,0);
         if(typeof data.scheduledAt!=='string'||!Number.isFinite(Date.parse(data.scheduledAt))||new Date(data.scheduledAt).toISOString()!==data.scheduledAt)fail('Data e horário inválidos.');
-        const row={id:before?.id||crypto.randomUUID(),uid:data.uid,title:text(data.title,3,180),scheduledAt:data.scheduledAt,cadenceDays:integer(data.cadenceDays,0,365),status:'scheduled',notes:before?.notes||'',version:data.version+1,createdBy:before?.createdBy||context.uid,createdAt:before?.createdAt||now(),updatedAt:now()};conversations.set(row.id,row);return {record:conversationDTO(context,row)};
+        const row={id:before?.id||crypto.randomUUID(),uid:data.uid,title:text(data.title,3,180),scheduledAt:data.scheduledAt,cadenceDays:integer(data.cadenceDays,0,365),meetingUrl:data.meetingUrl===undefined?before?.meetingUrl||null:normalizeMeetingUrl(data.meetingUrl),status:'scheduled',notes:before?.notes||'',version:data.version+1,createdBy:before?.createdBy||context.uid,createdAt:before?.createdAt||now(),updatedAt:now()};conversations.set(row.id,row);return {record:conversationDTO(context,row)};
       });
     }
     if(action==='development-conversation-transition'){
