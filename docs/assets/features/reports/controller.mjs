@@ -1,7 +1,7 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=meetings-1';
-import {administrativeWorkbook,saveReport} from './export.mjs?v=meetings-1';
-import {loadSpreadsheet} from '../../shared/spreadsheet-loader.mjs?v=meetings-1';
-export function createAdministrativeReports({host,api,getUser,save=saveReport,loadPDF=()=>import('../../vendor/administrative-report-pdf.mjs?v=meetings-1'),loadExcel=loadSpreadsheet}) {
+import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
+import {administrativeWorkbook,saveReport} from './export.mjs?v=payments-1';
+import {loadSpreadsheet} from '../../shared/spreadsheet-loader.mjs?v=payments-1';
+export function createAdministrativeReports({host,api,getUser,save=saveReport,loadPDF=()=>import('../../vendor/administrative-report-pdf.mjs?v=payments-1'),loadExcel=loadSpreadsheet}) {
   if(!host?.querySelector)return {reset(){}};
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   host.innerHTML=`<section class="people-card"><div class="card-heading"><div><h2>Relatórios administrativos</h2><p>Férias, documentos, avaliações e indicadores em um único arquivo.</p></div></div><form data-report-form><div class="people-form-grid"><label>Início<input type="date" name="from" value="${today.slice(0,4)}-01-01" required></label><label>Fim<input type="date" name="to" value="${today}" required></label></div><label>Colaborador<select name="uid" data-report-person><option value="">Todas as pessoas</option></select></label><div class="hr-actions"><button type="submit" name="format" value="pdf" class="button primary">Baixar PDF</button><button type="submit" name="format" value="xlsx" class="button secondary">Baixar Excel</button></div><p class="data-error" data-report-error role="alert" hidden></p><p data-report-status class="field-hint" aria-live="polite"></p></form><p class="field-hint">Disponível para RH e ADMIN. Período de até 366 dias. Nenhum conteúdo de documento ou comentário de avaliação é exportado. O arquivo inclui os critérios de cada seção.</p></section>`;

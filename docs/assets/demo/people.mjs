@@ -1,8 +1,10 @@
+import {validateProfileInput} from '../vendor/personnel-profile.mjs?v=payments-1';
 const roles = { employee: 'Colaborador', manager: 'Gestor', hr: 'RH', admin: 'ADMIN' };
 const eventTypes = new Set(['orientation','feedback','improvement','conversation','training','warning','medical','movement','milestone']);
 const categories = new Set(['identity','contract','certificate','medical','proof','other']);
 const professionalFields = ['employeeNumber','jobTitle','department','hireDate','workMode','location'];
-const contacts = ['phone','emergencyContact'];
+const contacts = ['phone','emergencyContact','address','emergencyName','emergencyPhone'];
+const employment = ['contractType','paymentDay'];
 export const demoActors = [
   {uid:'presentation',label:'ADMIN · Visitante'}, {uid:'bruno',label:'Gestor · Bruno'},
   {uid:'demo-marina',label:'RH · Marina'}, {uid:'ana',label:'Colaborador · Ana'}
@@ -27,7 +29,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
     {uid:'demo-marina',name:'Marina Alves',email:'marina@exemplo.test',role:'hr',jobTitle:'Analista de pessoas',department:'Pessoas',managerUid:'presentation'},
     {uid:'carla',name:'Carla Sousa',email:'carla@exemplo.test',role:'employee',jobTitle:'',department:'Operações',managerUid:'bruno'},
     {uid:'demo-rafael',name:'Rafael Melo',email:'rafael@exemplo.test',role:'employee',jobTitle:'Analista financeiro',department:'Financeiro',managerUid:'presentation'}
-  ].map((profile,index)=>[profile.uid,{status:profile.uid==='carla'?'pending':'active',roleVersion:0,employeeNumber:profile.uid==='carla'?'':`PT-${String(index+1).padStart(3,'0')}`,hireDate:'2025-06-02',workMode:'remote',location:'São Paulo',phone:'(11) 90000-0000',emergencyContact:'Contato fictício · (11) 90000-0001',version:0,updatedAt:now(),...profile}]));
+  ].map((profile,index)=>[profile.uid,{status:profile.uid==='carla'?'pending':'active',roleVersion:0,employeeNumber:profile.uid==='carla'?'':`PT-${String(index+1).padStart(3,'0')}`,hireDate:'2025-06-02',workMode:'remote',location:'São Paulo',phone:'(11) 90000-0000',emergencyContact:'Contato fictício · (11) 90000-0001',address:'Rua Exemplo, 100 · São Paulo/SP',emergencyName:'Contato fictício',emergencyPhone:'(11) 90000-0001',contractType:'clt',paymentDay:5,version:0,updatedAt:now(),...profile}]));
   const events=new Map(),documents=new Map(),files=new Map(),mutations=new Map();
   const actor=()=>profiles.get(actorUid);
   const privileged=()=>['admin','hr'].includes(actor().role);
@@ -36,7 +38,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
   const canRead=item=>inScope(item.uid)&&(item.visibility==='shared'||privileged());
   const canCreate=uid=>privileged()||actor().role==='manager'&&uid!==actorUid&&profiles.get(uid)?.managerUid===actorUid;
   const capabilities=uid=>({canManagePeople:actor().role!=='employee',canAssignRoles:actor().role==='admin',canEditProfessional:privileged(),canEditContacts:privileged()||uid===actorUid,canReadRestricted:privileged(),canCreateEvent:canCreate(uid)});
-  const profileDTO=profile=>{const result={...profile,managerName:profiles.get(profile.managerUid)?.name||null};if(!privileged()&&profile.uid!==actorUid){delete result.phone;delete result.emergencyContact;}return result;};
+  const profileDTO=profile=>{const result={...profile,managerName:profiles.get(profile.managerUid)?.name||null};if(!privileged()&&profile.uid!==actorUid){for(const field of [...contacts,...employment])delete result[field];}return result;};
   const docDTO=doc=>({...doc});
   const eventDTO=event=>({...event,acknowledgementRequired:event.acknowledgementMode!=='none',acknowledgementStatus:event.acknowledgedAt?'confirmed':event.acknowledgementMode==='app'?'pending':event.acknowledgementMode==='proof'?[...documents.values()].some(doc=>doc.eventId===event.id&&doc.category==='proof'&&doc.status==='active')?'attached':'pending':'not_required',documents:[...documents.values()].filter(doc=>doc.eventId===event.id&&doc.status==='active'&&canRead(doc)).map(docDTO)});
   function seedEvent(id,uid,type,title,content,{visibility='shared',acknowledgementMode='none',occurredOn=relative(-2)}={}) {
@@ -91,7 +93,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
     }
     if(action==='people-profile-save') {
       const profile=target(uid),permission=capabilities(uid);validateVersion(profile,data.version);text(data.reason,10,1000,'Descreva o motivo da atualização.');const updates={};
-      for(const field of [...professionalFields,...contacts])if(Object.hasOwn(data,field)){if(!(professionalFields.includes(field)?permission.canEditProfessional:permission.canEditContacts))fail('Você não pode alterar este campo.',403);const value=text(data[field],0,field==='emergencyContact'?240:180,'Campo inválido.');if(field==='hireDate'&&(!dateValue(value)||value>today()))fail('Data de admissão inválida.');if(field==='workMode'&&!['','remote','hybrid','onsite'].includes(value))fail('Modalidade inválida.');updates[field]=value;}
+      Object.assign(updates,validateProfileInput(data,[...(permission.canEditProfessional?[...professionalFields,...employment]:[]),...(permission.canEditContacts?contacts:[])]));
       Object.assign(profile,updates);profile.version++;profile.updatedAt=now();return {profile:profileDTO(profile),capabilities:capabilities(uid)};
     }
     if(action==='people-role-save') {
@@ -134,7 +136,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
   function download(id) {const document=accessItem(documents,id);return {blob:files.get(id),filename:document.filename};}
   async function downloadTerm(id) {
     const requestedActor=actorUid,event=accessItem(events,id),profile=target(event.uid);
-    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=meetings-1');
+    const {generateTermPdf}=await import('../vendor/people-term-pdf.mjs?v=payments-1');
     const bytes=await generateTermPdf({employee:{name:profile.name,employeeNumber:profile.employeeNumber,jobTitle:profile.jobTitle,department:profile.department},event:{id:event.id,type:event.type,title:event.title,content:event.content,occurredOn:event.occurredOn,createdByName:event.createdByName,createdAt:event.createdAt,version:event.version,status:event.status,archivedAt:event.archivedAt,archiveReason:event.archiveReason},generatedAt:now(),demonstration:true});
     if(actorUid!==requestedActor)fail('A sessão demonstrativa mudou. Gere o termo novamente.',403);
     accessItem(events,id);
@@ -149,6 +151,7 @@ export function createPeopleDemo({clock=()=>new Date()}={}) {
     if(user.role==='admin'&&profile.role!=='admin') {profile.previousRole=profile.role;profile.role='admin';}
     else if(user.role!=='admin'&&profile.role==='admin') {profile.role=profile.previousRole||'employee';delete profile.previousRole;}
   }
-  return {request,download,downloadTerm,select,sessionUser,synchronizeAccount,synchronizeAdministrator};
+  const financeDirectory=()=>[...profiles.values()].map(({uid,name,status,role,managerUid,employeeNumber,jobTitle,department,workMode,contractType,paymentDay})=>({uid,name,status,role,managerUid,employeeNumber,jobTitle,department,workMode,contractType,paymentDay}));
+  return {request,download,downloadTerm,select,sessionUser,synchronizeAccount,synchronizeAdministrator,financeDirectory};
 }
 export const peopleDemo=createPeopleDemo();

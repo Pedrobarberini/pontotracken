@@ -1,4 +1,4 @@
-import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=meetings-1';
+import { escapeHTML as e, icon } from '../../shared/dom.mjs?v=payments-1';
 
 export const eventTypes = {
   orientation: 'Orientação', feedback: 'Feedback', improvement: 'Melhoria',
@@ -7,7 +7,7 @@ export const eventTypes = {
 };
 export const documentCategories = { identity: 'Identificação', contract: 'Contrato', certificate: 'Certificado', medical: 'Saúde', proof: 'Comprovante', other: 'Outro' };
 export const roleNames = { employee: 'Colaborador', manager: 'Gestor', hr: 'RH', admin: 'ADMIN' };
-export const workModes = { '': 'Não informado', remote: 'Remoto', hybrid: 'Híbrido', onsite: 'Presencial' };
+export const workModes = { '': 'Não informado', remote: 'Home office', hybrid: 'Híbrido', onsite: 'Presencial' };
 export const initials = name => String(name || '?').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
 export const dateLabel = value => value ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(value.length === 10 ? value + 'T12:00:00Z' : value)) : 'Não informado';
 export const options = (values, current = '') => Object.entries(values).map(([value, label]) => `<option value="${e(value)}" ${value === current ? 'selected' : ''}>${e(label)}</option>`).join('');

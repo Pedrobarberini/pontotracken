@@ -1,25 +1,26 @@
-import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=meetings-1";
-import { hours, createDateFormatters } from "../shared/formatters.mjs?v=meetings-1";
-import { createRecordsTable } from "../shared/records-table.mjs?v=meetings-1";
-import { createApplicationState } from "../core/state.mjs?v=meetings-1";
-import { createClock } from "../core/clock.mjs?v=meetings-1";
-import { createAPIClient } from "../core/api-client.mjs?v=meetings-1";
-import { createAuthentication } from "../core/auth/controller.mjs?v=meetings-1";
-import { createNavigation } from "../core/navigation.mjs?v=meetings-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView, isAttendanceAction } from "../core/features.mjs?v=meetings-1";
-import { createAttendance } from "../features/attendance/controller.mjs?v=meetings-1";
-import { createHistory } from "../features/history/controller.mjs?v=meetings-1";
-import { createSpreadsheetImport } from "../features/import/controller.mjs?v=meetings-1";
-import { createAdmin } from "../features/admin/controller.mjs?v=meetings-1";
-import { createJourney } from "../features/journey/controller.mjs?v=meetings-1";
-import { createPeople } from "../features/people/controller.mjs?v=meetings-1";
-import { createHR } from "../features/hr/controller.mjs?v=meetings-1";
-import { createDevelopment } from "../features/development/controller.mjs?v=meetings-1";
-import {createAdministrativeReports} from "../features/reports/controller.mjs?v=meetings-1";
-import { apiBase, demoHref } from "../connection.js?v=meetings-1";
+import {createFinance} from '../features/finance/controller.mjs?v=payments-1';
+import { $, busy, escapeHTML, createNotifications } from "../shared/dom.mjs?v=payments-1";
+import { hours, createDateFormatters } from "../shared/formatters.mjs?v=payments-1";
+import { createRecordsTable } from "../shared/records-table.mjs?v=payments-1";
+import { createApplicationState } from "../core/state.mjs?v=payments-1";
+import { createClock } from "../core/clock.mjs?v=payments-1";
+import { createAPIClient } from "../core/api-client.mjs?v=payments-1";
+import { createAuthentication } from "../core/auth/controller.mjs?v=payments-1";
+import { createNavigation } from "../core/navigation.mjs?v=payments-1";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView, isAttendanceAction } from "../core/features.mjs?v=payments-1";
+import { createAttendance } from "../features/attendance/controller.mjs?v=payments-1";
+import { createHistory } from "../features/history/controller.mjs?v=payments-1";
+import { createSpreadsheetImport } from "../features/import/controller.mjs?v=payments-1";
+import { createAdmin } from "../features/admin/controller.mjs?v=payments-1";
+import { createJourney } from "../features/journey/controller.mjs?v=payments-1";
+import { createPeople } from "../features/people/controller.mjs?v=payments-1";
+import { createHR } from "../features/hr/controller.mjs?v=payments-1";
+import { createDevelopment } from "../features/development/controller.mjs?v=payments-1";
+import {createAdministrativeReports} from "../features/reports/controller.mjs?v=payments-1";
+import { apiBase, demoHref } from "../connection.js?v=payments-1";
 async function startApplication() {
   const isDemo = document.body.dataset.mode === "demo";
-  const demoClient = isDemo ? await import("../demo/api.mjs?v=meetings-1") : null;
+  const demoClient = isDemo ? await import("../demo/api.mjs?v=payments-1") : null;
   const state = createApplicationState();
   state.demo = isDemo;
   const clock = createClock(state);
@@ -63,6 +64,7 @@ async function startApplication() {
   const journey = createJourney({ ...shared, getUser: () => state.session?.user });
   const people = createPeople({ ...shared, download, switchView: navigation.switchView });
   const hr = createHR({ ...shared });
+  const finance=createFinance({host:$('#finance-content'),...shared});
   const reports=createAdministrativeReports({host:$("#administrative-reports-content"),api,getUser:()=>state.session?.user});
   const development = createDevelopment({ ...shared });
   const authentication = createAuthentication({
@@ -83,6 +85,7 @@ async function startApplication() {
     hr.reset();
     development.reset();
     reports.reset();
+    finance.reset();
     journey.reset();
     admin.reset();
     spreadsheet.invalidatePreview();
@@ -111,6 +114,7 @@ async function startApplication() {
       navigation.switchView(defaultView(state));
       return;
     }
+    if(view==="pagamentos")await finance.open();
     if(view==="relatorios")await reports.loadPeople();
     if (["ausencias", "ciclo"].includes(view)) await hr.open(view);
     if (["desenvolvimento", "indicadores"].includes(view)) await development.open(view);

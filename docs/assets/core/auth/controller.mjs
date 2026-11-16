@@ -1,7 +1,7 @@
-import { createFirebaseIdentity } from "./firebase.mjs?v=meetings-1";
-import { $, busy } from "../../shared/dom.mjs?v=meetings-1";
-import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=meetings-1";
-import { createPasswordAccount } from "./password-policy.mjs?v=meetings-1";
+import { createFirebaseIdentity } from "./firebase.mjs?v=payments-1";
+import { $, busy } from "../../shared/dom.mjs?v=payments-1";
+import { exchangeFirebaseLogin, restoreFirebaseLogin } from "./persistent-login.mjs?v=payments-1";
+import { createPasswordAccount } from "./password-policy.mjs?v=payments-1";
 function createAuthentication({ state, api, toast, isDemo, demoHref, showApp, showLogin, clearApiToken, resetFeatures }) {
   const { firebaseAuth, getAppCheckToken } = createFirebaseIdentity(state);
   function loginExchange() {

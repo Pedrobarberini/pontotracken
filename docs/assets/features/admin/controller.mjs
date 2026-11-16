@@ -1,15 +1,15 @@
-import { createProvenance } from "../history/provenance.mjs?v=meetings-1";
-import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=meetings-1";
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=meetings-1";
-import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=meetings-1";
-import { createAccountDeletion } from "./account-deletion-controller.mjs?v=meetings-1";
-import { createAccountTransfer } from "./account-transfer-controller.mjs?v=meetings-1";
-import { createAccountRole } from "./account-role-controller.mjs?v=meetings-1";
-import { createRegistrations } from "./registrations-controller.mjs?v=meetings-1";
-import { createBackups } from "./backups-controller.mjs?v=meetings-1";
-import {createEmailNotifications} from "./email-notifications-controller.mjs?v=meetings-1";
-import { createMonitoring } from "./monitoring-controller.mjs?v=meetings-1";
-import { attendanceEnabled } from "../../core/features.mjs?v=meetings-1";
+import { createProvenance } from "../history/provenance.mjs?v=payments-1";
+import { recordStatus, sourceLabel, calendarTotals } from "../calendar/presentation.mjs?v=payments-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=payments-1";
+import { accountActions, accountLabels, accountEventDetails } from "./account-views.mjs?v=payments-1";
+import { createAccountDeletion } from "./account-deletion-controller.mjs?v=payments-1";
+import { createAccountTransfer } from "./account-transfer-controller.mjs?v=payments-1";
+import { createAccountRole } from "./account-role-controller.mjs?v=payments-1";
+import { createRegistrations } from "./registrations-controller.mjs?v=payments-1";
+import { createBackups } from "./backups-controller.mjs?v=payments-1";
+import {createEmailNotifications} from "./email-notifications-controller.mjs?v=payments-1";
+import { createMonitoring } from "./monitoring-controller.mjs?v=payments-1";
+import { attendanceEnabled } from "../../core/features.mjs?v=payments-1";
 const labels = { ...accountLabels, recorded: "Marcações de ponto", weekend: "Fim de semana", not_applicable: "Não se aplica", medical: "Atestado" };
 const recordText = (row) => !row ? "Sem registro" : row.times?.length ? row.times.join(" | ") : labels[row.status] || "Sem marcações";
 function createAdmin({ state, api, downloadBackup, busy, toast, formatDate, hours, currentMonth, currentParts, onCorrection }) {

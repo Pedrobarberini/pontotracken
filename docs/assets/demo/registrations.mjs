@@ -1,3 +1,4 @@
+import {validateProfileInput} from '../vendor/personnel-profile.mjs?v=payments-1';
 function createRegistrationsDemo({ peopleDemo, listUsers, getActor, onAudit = () => {
 }, clock = () => new Date() }) {
   const rows = new Map(), mutations = new Map();
@@ -36,7 +37,9 @@ function createRegistrationsDemo({ peopleDemo, listUsers, getActor, onAudit = ()
       const name = text(data.name, 2, 180), email = text(data.email, 3, 254).toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Informe um e-mail válido.");
       if ([...rows.values()].some((row) => row.id !== record?.id && row.status === "open" && row.email === email)) fail("Já existe pré-cadastro aberto para este e-mail.", 409);
-      record = { ...record || { id: crypto.randomUUID(), status: "open", linkedUid: null, createdAt: now() }, name, email, employeeNumber: text(data.employeeNumber || "", 0, 40), jobTitle: text(data.jobTitle || "", 0, 120), department: text(data.department || "", 0, 120), version: data.version + 1, updatedAt: now() };
+      const extended=['address','phone','emergencyName','emergencyPhone','workMode','contractType','paymentDay'];
+      const extra=validateProfileInput(Object.fromEntries(extended.filter(key=>Object.hasOwn(data,key)).map(key=>[key,data[key]])),extended);
+      record = { ...record || { id: crypto.randomUUID(), status: "open", linkedUid: null, createdAt: now() }, ...extra, name, email, employeeNumber: text(data.employeeNumber || "", 0, 40), jobTitle: text(data.jobTitle || "", 0, 120), department: text(data.department || "", 0, 120), version: data.version + 1, updatedAt: now() };
     } else {
       if (!record) fail("Informe o pré-cadastro.");
       if (action === "admin-registration-link") {
@@ -45,7 +48,7 @@ function createRegistrationsDemo({ peopleDemo, listUsers, getActor, onAudit = ()
         if ([...rows.values()].some((row) => row.status === "linked" && row.linkedUid === data.uid)) fail("Este login já possui pré-cadastro vinculado.", 409);
         const { profile } = await peopleDemo.request("people-profile", { query: `&uid=${encodeURIComponent(data.uid)}` });
         if (profile.version !== data.profileVersion) fail("A ficha foi atualizada. Reabra o vínculo.", 409);
-        const updates = Object.fromEntries(["employeeNumber", "jobTitle", "department"].filter((field) => !profile[field] && record[field]).map((field) => [field, record[field]]));
+        const updates = Object.fromEntries(["employeeNumber", "jobTitle", "department","address","phone","emergencyName","emergencyPhone","workMode","contractType","paymentDay"].filter((field) => !profile[field] && record[field]).map((field) => [field, record[field]]));
         await peopleDemo.request("people-profile-save", { data: { uid: data.uid, version: profile.version, reason: data.reason, ...updates } });
         record = { ...record, status: "linked", linkedUid: data.uid, version: record.version + 1, updatedAt: now() };
       } else record = { ...record, status: "archived", version: record.version + 1, updatedAt: now() };

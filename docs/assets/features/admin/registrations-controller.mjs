@@ -1,5 +1,5 @@
-import { escapeHTML as e } from "../../shared/dom.mjs?v=meetings-1";
-import { registrationInvitation } from "./registration-invitation.mjs?v=meetings-1";
+import { escapeHTML as e } from "../../shared/dom.mjs?v=payments-1";
+import { registrationInvitation } from "./registration-invitation.mjs?v=payments-1";
 
 const statusNames = { open: "Aguardando vínculo", linked: "Login vinculado", archived: "Arquivado" };
 const reasonField = '<label for="registration-reason">Justificativa</label><textarea id="registration-reason" name="reason" minlength="10" maxlength="1000" rows="3" required></textarea>';
@@ -64,7 +64,10 @@ export function createRegistrations({ host, api, toast, onChanged = async () => 
   }
   function edit(row = null) {
     const fields = [["name", "Nome completo", true, 180], ["email", "E-mail do futuro login", true, 254], ["employeeNumber", "Matrícula", false, 40], ["jobTitle", "Cargo", false, 120], ["department", "Área", false, 120]];
-    show(row ? "Editar pré-cadastro" : "Novo colaborador", fields.map(([name, label, required, max]) => `<label for="registration-${name}">${label}</label><input id="registration-${name}" name="${name}" type="${name === "email" ? "email" : "text"}" value="${e(row?.[name] || "")}" maxlength="${max}" ${required ? "required" : ""}>`).join(""), "admin-registration-save", form => ({ ...Object.fromEntries(form), ...(row ? { id: row.id } : {}), version: row?.version || 0 }), "Pré-cadastro salvo. O acesso ainda depende do cadastro e aprovação do login.");
+    fields.push(["address", "Endereço completo", false, 500], ["phone", "Telefone", false, 40], ["emergencyName", "Nome do contato de emergência", false, 120], ["emergencyPhone", "Telefone de emergência", false, 40]);
+    const select = (name, label, values) => `<label for="registration-${name}">${label}</label><select id="registration-${name}" name="${name}">${Object.entries(values).map(([value, text]) => `<option value="${value}" ${row?.[name] === value ? 'selected' : ''}>${text}</option>`).join('')}</select>`;
+    const content = fields.map(([name, label, required, max]) => `<label for="registration-${name}">${label}</label><input id="registration-${name}" name="${name}" type="${name === "email" ? "email" : name.toLowerCase().includes('phone') ? 'tel' : "text"}" value="${e(row?.[name] || "")}" maxlength="${max}" ${required ? "required" : ""}>`).join("") + select('workMode', 'Modalidade de trabalho', {'':'Não informado',remote:'Home office',hybrid:'Híbrido',onsite:'Presencial'}) + select('contractType', 'Contrato', {'':'Não informado',clt:'CLT',pj:'PJ'}) + `<label for="registration-paymentDay">Dia fixo de pagamento mensal</label><input id="registration-paymentDay" name="paymentDay" type="number" min="1" max="31" step="1" value="${e(row?.paymentDay ?? '')}"><p class="field-hint">A data específica será confirmada em cada lançamento de pagamento.</p>`;
+    show(row ? "Editar pré-cadastro" : "Novo colaborador", content, "admin-registration-save", form => ({ ...Object.fromEntries(form), ...(row ? { id: row.id } : {}), version: row?.version || 0 }), "Pré-cadastro salvo. O acesso ainda depende do cadastro e aprovação do login.");
   }
   async function invite(row) {
     const generation = epoch, message = registrationInvitation(row, document.baseURI);
@@ -90,7 +93,7 @@ export function createRegistrations({ host, api, toast, onChanged = async () => 
       if (matches.length !== 1 || result.nextOffset !== null) throw new Error(matches.length === 0 ? "Ainda não há login disponível com este e-mail. Peça ao colaborador que se cadastre no site e tente novamente." : "Há mais de um resultado possível. Revise os cadastros antes de vincular.");
       const user = matches[0], { profile } = await api("people-profile", { query: `&uid=${encodeURIComponent(user.uid)}` });
       if (generation !== epoch || request !== sequence) return;
-      show("Vincular login", `<p><strong>${e(row.name)}</strong><br>${e(row.email)}</p><p>Login encontrado: ${e(user.name)}.</p><p class="field-hint">Somente dados profissionais vazios serão preenchidos. O vínculo não aprova nem reativa o acesso; use as ações de acesso da equipe depois.</p>`, "admin-registration-link", form => ({ id: row.id, version: row.version, uid: user.uid, profileVersion: profile.version, reason: form.get("reason") }), "Login vinculado. Confira e aprove o acesso na lista da equipe.");
+      show("Vincular login", `<p><strong>${e(row.name)}</strong><br>${e(row.email)}</p><p>Login encontrado: ${e(user.name)}.</p><p class="field-hint">Somente campos vazios da ficha serão preenchidos. O vínculo não aprova nem reativa o acesso; use as ações de acesso da equipe depois.</p>`, "admin-registration-link", form => ({ id: row.id, version: row.version, uid: user.uid, profileVersion: profile.version, reason: form.get("reason") }), "Login vinculado. Confira e aprove o acesso na lista da equipe.");
     } catch (failure) { if (generation === epoch && request === sequence) report(failure); }
   }
   $("[data-registration-new]").onclick = () => { if (!pending) { sequence++; edit(); } };

@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=meetings-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=payments-1";
 
 export const accountLabels = {
   pending: "Aguardando aprovação", active: "Liberado", blocked: "Bloqueado", deleted: "Conta excluída"

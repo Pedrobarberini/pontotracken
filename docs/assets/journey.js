@@ -1,4 +1,4 @@
-import { createJourney } from "./features/journey/controller.mjs?v=meetings-1";
+import { createJourney } from "./features/journey/controller.mjs?v=payments-1";
 export {
   createJourney
 };

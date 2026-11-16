@@ -1,7 +1,7 @@
-import { createOvertimePresentation } from "./presentation.mjs?v=meetings-1";
-import { mountJourneyViews } from "./views.mjs?v=meetings-1";
-import { calendarBadge } from "../calendar/presentation.mjs?v=meetings-1";
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=meetings-1";
+import { createOvertimePresentation } from "./presentation.mjs?v=payments-1";
+import { mountJourneyViews } from "./views.mjs?v=payments-1";
+import { calendarBadge } from "../calendar/presentation.mjs?v=payments-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=payments-1";
 const activityNames = { available: "Disponível", lunch: "Almoço", break: "Pausa rápida", meeting: "Reunião", external: "Externo", offline: "Offline" };
 const statusNames = { running: "Em andamento", pending: "Aguardando análise", approved: "Aprovada", rejected: "Recusada" };
 const when = (value) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(value));
