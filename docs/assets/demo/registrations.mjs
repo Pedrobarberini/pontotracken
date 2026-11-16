@@ -1,4 +1,4 @@
-import {validateProfileInput} from '../vendor/personnel-profile.mjs?v=payments-1';
+import {validateProfileInput} from '../vendor/personnel-profile.mjs?v=payments-2';
 function createRegistrationsDemo({ peopleDemo, listUsers, getActor, onAudit = () => {
 }, clock = () => new Date() }) {
   const rows = new Map(), mutations = new Map();

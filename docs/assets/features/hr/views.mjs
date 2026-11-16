@@ -1,6 +1,6 @@
-import {vacationBalancesView,vacationRulesView} from './vacation-views.mjs?v=payments-1';
-import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
-import {noticesView,demandNotices,calendarDemandView,demandWarnings,demandWarningsView} from './planning-views.mjs?v=payments-1';
+import {vacationBalancesView,vacationRulesView} from './vacation-views.mjs?v=payments-2';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-2';
+import {noticesView,demandNotices,calendarDemandView,demandWarnings,demandWarningsView} from './planning-views.mjs?v=payments-2';
 export const typeNames={vacation:'Férias',day_off:'Folga',other:'Ausência pessoal'};
 export const statusNames={pending:'Pendente',approved:'Aprovada',rejected:'Não aprovada',cancelled:'Cancelada',open:'Em andamento',closed:'Encerrado',completed:'Concluída'};
 export const dateLabel=value=>value?new Intl.DateTimeFormat('pt-BR',{timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';

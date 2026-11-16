@@ -1,15 +1,15 @@
-import {administrativeDemoReport} from './administrative-reports.mjs?v=payments-1';
-import {createFinanceDemo} from './finance.mjs?v=payments-1';
-import {emailNotificationsDemo} from './email-notifications.mjs?v=payments-1';
-import { journeyDemo } from "./journey.mjs?v=payments-1";
-import { provenanceDemo } from "./provenance.mjs?v=payments-1";
-import { peopleDemo, demoActors } from "./people.mjs?v=payments-1";
-import { createHrDemo } from "./hr.mjs?v=payments-1";
-import { createDevelopmentDemo } from "./development.mjs?v=payments-1";
-import { createRegistrationsDemo } from "./registrations.mjs?v=payments-1";
-import { monitoringDemoSnapshot, documentIntegrityDemoPage } from "./monitoring.mjs?v=payments-1";
-import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=payments-1";
-import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=payments-1";
+import {administrativeDemoReport} from './administrative-reports.mjs?v=payments-2';
+import {createFinanceDemo} from './finance.mjs?v=payments-2';
+import {emailNotificationsDemo} from './email-notifications.mjs?v=payments-2';
+import { journeyDemo } from "./journey.mjs?v=payments-2";
+import { provenanceDemo } from "./provenance.mjs?v=payments-2";
+import { peopleDemo, demoActors } from "./people.mjs?v=payments-2";
+import { createHrDemo } from "./hr.mjs?v=payments-2";
+import { createDevelopmentDemo } from "./development.mjs?v=payments-2";
+import { createRegistrationsDemo } from "./registrations.mjs?v=payments-2";
+import { monitoringDemoSnapshot, documentIntegrityDemoPage } from "./monitoring.mjs?v=payments-2";
+import { calendarContext, enrichCalendar, projectMonth, matchesCalendarFilter, calendarFilters, calendarCsv } from "../calendar.mjs?v=payments-2";
+import { attendanceSummary } from "../vendor/journey-metrics.mjs?v=payments-2";
 const hrDemo = createHrDemo({peopleDemo,blockAccount:async uid=>{const context={actorUid:peopleDemo.sessionUser().uid,dateNow},user=journeyDemo('demo-directory',context).users.find(row=>row.uid===uid);if(!user)throw new Error('Conta de demonstração não encontrada.');const response=journeyDemo('admin-access',{...context,data:{uid,status:'blocked',version:user.version}});peopleDemo.synchronizeAccount(response.user);}});
 const developmentDemo = createDevelopmentDemo({peopleDemo, hrDemo, getJourneyReport: ({people,from,to}) =>
   journeyDemo('demo-attendance-report',{data:{people,from,to},query:'',dateNow,days,parseCell,actorUid:'presentation'})});

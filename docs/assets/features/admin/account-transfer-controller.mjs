@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=payments-1";
+import { $ } from "../../shared/dom.mjs?v=payments-2";
 
 /** Transfers are verified on the server before any ownership change is offered. */
 export function createAccountTransfer({ api, getUser }) {

@@ -1,6 +1,6 @@
-import { escapeHTML as e } from '../../shared/dom.mjs?v=payments-1';
-import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=payments-1';
-import {fromLocalStamp} from './time.mjs?v=payments-1';
+import { escapeHTML as e } from '../../shared/dom.mjs?v=payments-2';
+import {shell,conversationForm,conversationEndForm,cycleForm,goalForm,progressForm,reviewForm,confirmationForm,indicatorsView} from './views.mjs?v=payments-2';
+import {fromLocalStamp} from './time.mjs?v=payments-2';
 
 export function createDevelopment({state,api,busy,toast}) {
   let context=null, tab='conversations', uid='', cycleId='', rows=[], cycles=[], reviews=[], nextOffset=null, reviewOffset=null, generation=0, epoch=0, range={};

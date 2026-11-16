@@ -1,6 +1,6 @@
-import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=payments-1';
-import { roleNames } from './presentation.mjs?v=payments-1';
-import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=payments-1';
+import { $, $$, escapeHTML as e } from '../../shared/dom.mjs?v=payments-2';
+import { roleNames } from './presentation.mjs?v=payments-2';
+import { profileView, listView, eventDialog, documentDialog, confirmationDialog } from './views.mjs?v=payments-2';
 
 export function createPeople({ state, api, download, busy, toast, currentParts, switchView }) {
   let context = null, profile = null, capabilities = {}, selectedUid = '', tab = 'history';

@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-2';
 export {e};
 export const money=value=>value===null||value===undefined?'A calcular':new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value/100);
 export const decimal=value=>value===null||value===undefined?'':(value/100).toFixed(2);

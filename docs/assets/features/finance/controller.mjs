@@ -1,5 +1,5 @@
-import {e,money,personOptions,peopleTable,overtimeTable,paymentsTable,totals} from './presentation.mjs?v=payments-1';
-import {rateForm,overtimeForm,paymentForm,operationForm,availableOptions} from './forms.mjs?v=payments-1';
+import {e,money,personOptions,peopleTable,overtimeTable,paymentsTable,totals} from './presentation.mjs?v=payments-2';
+import {rateForm,overtimeForm,paymentForm,operationForm,availableOptions} from './forms.mjs?v=payments-2';
 
 /** All financial writes go through authenticated, versioned server operations. */
 export function createFinance({host,api,state,toast,currentParts}) {

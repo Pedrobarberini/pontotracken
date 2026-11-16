@@ -1,4 +1,4 @@
-import {noticeInput,archiveNoticeInput} from '../vendor/hr-planning.mjs?v=payments-1';
+import {noticeInput,archiveNoticeInput} from '../vendor/hr-planning.mjs?v=payments-2';
 
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 

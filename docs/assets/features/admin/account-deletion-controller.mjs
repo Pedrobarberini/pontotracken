@@ -1,4 +1,4 @@
-import { $ } from "../../shared/dom.mjs?v=payments-1";
+import { $ } from "../../shared/dom.mjs?v=payments-2";
 
 /** The operation is permanent in the app; previous records remain available to administrators. */
 export function createAccountDeletion({ api, toast, onDeleted }) {

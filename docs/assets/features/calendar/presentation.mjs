@@ -1,4 +1,4 @@
-import { escapeHTML as esc } from "../../shared/dom.mjs?v=payments-1";
+import { escapeHTML as esc } from "../../shared/dom.mjs?v=payments-2";
 function calendarLabel(row) {
   if (!row) return "";
   const kind = row.calendarKind ?? (row.status === "weekend" ? "weekend" : "regular");

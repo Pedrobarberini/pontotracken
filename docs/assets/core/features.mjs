@@ -16,3 +16,12 @@ export function attendanceEnabled(state) {
 
 export const isAttendanceAction = action => attendanceActions.has(action);
 export const defaultView = state => state?.peopleContext?.canManagePeople ? "gestao" : "ficha";
+
+export function initialView(state, requested) {
+  if (!state?.session?.user) return defaultView(state);
+  const allowed = ["ficha", "visao", "ausencias", "ciclo", "desenvolvimento", "pagamentos",
+    ...(attendanceEnabled(state) ? ATTENDANCE_VIEWS : []),
+    ...(state.peopleContext?.canManagePeople ? ["pessoas", "gestao", "indicadores"] : []),
+    ...(state.session.user.role === "admin" ? ["admin"] : [])];
+  return allowed.includes(requested) ? requested : defaultView(state);
+}

@@ -1,5 +1,5 @@
-import { $, $$ } from "../shared/dom.mjs?v=payments-1";
-import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=payments-1";
+import { $, $$ } from "../shared/dom.mjs?v=payments-2";
+import { attendanceEnabled, ATTENDANCE_VIEWS, defaultView } from "./features.mjs?v=payments-2";
 function createNavigation({ state, onView }) {
   const mobileMenu = matchMedia("(max-width:860px)");
   function setMenu(open, restoreFocus = false) {

@@ -1,4 +1,4 @@
-import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=payments-1";
+import { $, escapeHTML as esc } from "../../shared/dom.mjs?v=payments-2";
 function createSpreadsheetImport({ state, api, busy, toast, download, recordsTable, loadHome, switchView }) {
   $("#template").onclick = () => download("api?action=template");
   function invalidatePreview() {

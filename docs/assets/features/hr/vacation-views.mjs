@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-2';
 const when=value=>value?value.split('-').reverse().join('/'):'—';
 export function vacationBalancesView(result) {
   const manage=result.capabilities.canManageBalances;

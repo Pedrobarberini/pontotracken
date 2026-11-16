@@ -1,6 +1,6 @@
-import { escapeHTML as e } from '../../shared/dom.mjs?v=payments-1';
-import { localStamp } from './time.mjs?v=payments-1';
-import {normalizeMeetingUrl} from '../../vendor/meeting-link.mjs?v=payments-1';
+import { escapeHTML as e } from '../../shared/dom.mjs?v=payments-2';
+import { localStamp } from './time.mjs?v=payments-2';
+import {normalizeMeetingUrl} from '../../vendor/meeting-link.mjs?v=payments-2';
 const statusNames = {scheduled:'Agendada',completed:'Concluído',cancelled:'Cancelado',draft:'Rascunho',open:'Aberto',closed:'Encerrado',published:'Publicado'};
 const stamp = value => value ? new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}) : '—';
 const day = value => value ? value.split('-').reverse().join('/') : '—';

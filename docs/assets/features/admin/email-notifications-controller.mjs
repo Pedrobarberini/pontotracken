@@ -1,4 +1,4 @@
-import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
+import {escapeHTML as e} from '../../shared/dom.mjs?v=payments-2';
 const labels={pending:'Na fila',sending:'Em entrega',sent:'Enviado',failed:'Tentar novamente',needs_review:'Revisar entrega',cancelled:'Cancelado',skipped:'Ignorado por acesso ou prazo'};
 const when=value=>value?new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}).format(new Date(value)):'—';
 export function createEmailNotifications({host,api}) {

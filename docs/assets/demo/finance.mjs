@@ -1,5 +1,5 @@
-import {overtimeInput,rateInput,paymentInput,overtimeCalculation,filters,reason,dueDate} from '../vendor/finance-policy.mjs?v=payments-1';
-import {overtimeDTO,paymentDTO,rateDTO,minutesOf} from '../vendor/finance-presenter.mjs?v=payments-1';
+import {overtimeInput,rateInput,paymentInput,overtimeCalculation,filters,reason,dueDate} from '../vendor/finance-policy.mjs?v=payments-2';
+import {overtimeDTO,paymentDTO,rateDTO,minutesOf} from '../vendor/finance-presenter.mjs?v=payments-2';
 
 /** Fictitious, volatile records only. No Firebase, database or payment provider. */
 export function createFinanceDemo({peopleDemo,clock=()=>new Date()}){

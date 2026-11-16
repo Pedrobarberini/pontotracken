@@ -1,7 +1,7 @@
-import {$,$$,escapeHTML as e} from '../../shared/dom.mjs?v=payments-1';
-import {absencesView,lifecycleView,dialogForm,reasonField,options,typeNames,dateLabel} from './views.mjs?v=payments-1';
-import {bindPlanningNotices,bindRequestDemandWarnings} from './planning-controller.mjs?v=payments-1';
-import {demandNotices,demandWarnings,demandWarningsView} from './planning-views.mjs?v=payments-1';
+import {$,$$,escapeHTML as e} from '../../shared/dom.mjs?v=payments-2';
+import {absencesView,lifecycleView,dialogForm,reasonField,options,typeNames,dateLabel} from './views.mjs?v=payments-2';
+import {bindPlanningNotices,bindRequestDemandWarnings} from './planning-controller.mjs?v=payments-2';
+import {demandNotices,demandWarnings,demandWarningsView} from './planning-views.mjs?v=payments-2';
 
 export function createHR({state,api,busy,toast}) {
   let generation=0,identity=0,view='',result=null;
